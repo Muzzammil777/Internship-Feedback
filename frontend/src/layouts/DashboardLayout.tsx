@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useLocation, Outlet, useNavigate } from "react-router-dom";
 
 export default function DashboardLayout() {
@@ -10,7 +10,6 @@ export default function DashboardLayout() {
   const isStudent = location.pathname.includes('/student/');
   const isFaculty = location.pathname.includes('/faculty/');
   const isCompany = location.pathname.includes('/company/');
-  const isAdmin = location.pathname.includes('/admin/');
 
   let navigation = [];
   if (isStudent) {
@@ -95,6 +94,7 @@ export default function DashboardLayout() {
               className="w-full bg-surface-container-low border-none rounded-lg pl-10 pr-4 py-2 text-sm focus:ring-0 outline-none"
               placeholder="Search internships..."
               type="text"
+              onChange={(e) => localStorage.setItem("dashboardSearch", e.target.value)}
             />
           </div>
         </div>
