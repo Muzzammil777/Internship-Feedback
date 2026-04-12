@@ -5,11 +5,11 @@ export default function AdminDashboard() {
       <header className="flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-extrabold text-on-surface tracking-tight">Institutional Dashboard</h1>
-          <p className="text-outline mt-1 font-body">Academic Cycle: Autumn 2023 - Summer 2024</p>
+          <p className="text-outline mt-1 font-medium">Academic Cycle: Autumn 2023 - Summer 2024</p>
         </div>
         <div className="flex gap-3">
-          <button className="px-5 py-2.5 rounded-xl text-primary font-semibold border-2 border-primary/10 hover:bg-primary/5 transition-colors flex items-center gap-2">
-            <span className="material-symbols-outlined text-xl">file_download</span>
+          <button className="px-5 py-2.5 rounded-xl text-primary font-bold text-sm border-2 border-primary/10 hover:bg-primary/5 transition-colors flex items-center gap-2">
+            <span className="material-symbols-outlined text-[18px]">file_download</span>
             Export Report
           </button>
         </div>

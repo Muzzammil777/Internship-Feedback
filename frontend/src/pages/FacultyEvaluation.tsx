@@ -1,6 +1,6 @@
 export default function FacultyEvaluation() {
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 flex flex-col h-[calc(100vh-4rem)]">
+    <div className="p-8 space-y-8 flex flex-col h-[calc(100vh-4rem)]">
       <div className="mb-4">
         <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Evaluation Portal</h1>
         <p className="text-on-surface-variant mt-1 font-medium">Assign marks and remarks to student performance.</p>

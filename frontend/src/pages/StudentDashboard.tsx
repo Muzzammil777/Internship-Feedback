@@ -152,7 +152,7 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 space-y-8">
       {/* Page Header */}
       <div className="flex justify-between items-end">
         <div>

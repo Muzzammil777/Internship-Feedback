@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 export default function CompanyConfirmation() {
   return (
-    <div className="p-8 max-w-7xl mx-auto flex items-center justify-center min-h-[calc(100vh-6rem)]">
+    <div className="p-8 flex items-center justify-center min-h-[calc(100vh-6rem)]">
       <div className="bg-surface-container-lowest rounded-3xl p-10 md:p-16 border border-surface-variant text-center max-w-2xl w-full relative overflow-hidden">
         {/* Decorative Background */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-fixed/20 blur-[100px] -z-10 -m-32"></div>

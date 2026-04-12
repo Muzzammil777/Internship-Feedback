@@ -1,6 +1,6 @@
 export default function FacultyDashboard() {
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 space-y-8">
       <div className="mb-8">
         <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Faculty Dashboard</h1>
         <p className="text-on-surface-variant mt-1 font-medium">Overview of student internships and pending evaluations.</p>

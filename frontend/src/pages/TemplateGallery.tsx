@@ -1,15 +1,15 @@
 export default function TemplateGallery() {
   return (
-    <div className="pt-8 pb-12 px-10">
-      <div className="max-w-7xl mx-auto">
+    <div className="p-8">
+      <div className="space-y-8">
         {/* Page Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2">Template Gallery</h1>
-          <p className="text-outline font-medium">Manage and deploy institutional feedback frameworks across the hub.</p>
+        <div className="mb-8">
+          <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Template Gallery</h1>
+          <p className="text-on-surface-variant mt-1 font-medium">Manage and deploy institutional feedback frameworks across the hub.</p>
         </div>
 
         {/* Upload Section (Asymmetric Bento Style) */}
-        <section className="grid grid-cols-12 gap-6 mb-12">
+        <section className="grid grid-cols-12 gap-6">
           <div className="col-span-12 lg:col-span-8 bg-surface-container-lowest rounded-2xl p-8 border border-transparent flex flex-col relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-secondary-fixed opacity-10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
             <div className="flex items-center gap-4 mb-8">
@@ -57,7 +57,7 @@ export default function TemplateGallery() {
         </section>
 
         {/* Template Grid */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold font-headline">Active Frameworks</h2>
           <div className="flex gap-2">
             <button className="p-2 rounded-lg bg-surface-container-high text-on-surface">

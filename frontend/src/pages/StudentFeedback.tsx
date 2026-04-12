@@ -112,7 +112,7 @@ export default function StudentFeedback() {
   };
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8">
+    <div className="p-8 space-y-8">
       <div className="mb-10">
         <h1 className="text-3xl font-extrabold tracking-tight text-on-surface">Feedback Portal</h1>
         <p className="text-on-surface-variant mt-1 font-medium">Submit and review your weekly logbooks and feedback forms.</p>

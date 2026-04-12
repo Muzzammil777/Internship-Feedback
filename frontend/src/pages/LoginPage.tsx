@@ -44,11 +44,15 @@ export default function LoginPage() {
         <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_transparent_0%,_#000_100%),url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+PGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMSIgZmlsbD0iI2ZmZiIvPjwvc3ZnPg==')]"></div>
 
         <div className="relative z-10 flex flex-col h-full">
-          <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl w-fit mb-12 border border-white/20 shadow-xl">
-            <h2 className="text-2xl font-headline font-bold flex items-center gap-2">
-              <span className="material-symbols-outlined text-3xl">school</span>
-              Internship Portal
-            </h2>
+          <div className="flex justify-start items-center gap-12 w-full mb-12">
+            <div className="bg-white/10 backdrop-blur-md p-6 rounded-2xl w-fit border border-white/20 shadow-xl">
+              <h2 className="text-2xl font-headline font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-3xl">school</span>
+                Internship Portal
+              </h2>
+            </div>
+            
+            <img src="/favicon1.png" alt="Logo" className="w-32 h-32 object-contain drop-shadow-2xl opacity-90 animate-float" />
           </div>
 
           <div className="mt-auto mb-16">
@@ -107,8 +111,8 @@ export default function LoginPage() {
           <div className="bg-white rounded-3xl p-8 md:p-10 shadow-2xl shadow-indigo-900/10 border border-surface-variant">
             
             <div className="text-center mb-8">
-              <div className="w-16 h-16 bg-primary-container text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 scale-110">
-                <span className="material-symbols-outlined text-4xl">fingerprint</span>
+              <div className="w-20 h-20 mx-auto mb-4">
+                <img src="/favicon1.png" alt="Logo" className="w-full h-full object-contain drop-shadow-md" />
               </div>
               <h2 className="text-2xl font-extrabold font-headline text-on-surface">Sign In</h2>
               <p className="text-sm text-outline mt-1">Select your portal role to continue</p>
@@ -144,8 +148,8 @@ export default function LoginPage() {
                   {selectedRole} ID / Email
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span className="material-symbols-outlined text-primary bg-primary-container p-1.5 rounded-lg text-sm">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-white bg-primary p-1.5 rounded-lg text-sm shadow-sm opacity-90">
                       badge
                     </span>
                   </div>
@@ -165,8 +169,8 @@ export default function LoginPage() {
                   Password
                 </label>
                 <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span className="material-symbols-outlined text-primary bg-primary-container p-1.5 rounded-lg text-sm">
+                  <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                    <span className="material-symbols-outlined text-white bg-primary p-1.5 rounded-lg text-sm shadow-sm opacity-90">
                       lock
                     </span>
                   </div>
