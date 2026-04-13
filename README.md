@@ -28,11 +28,7 @@ The MoviCloud Internship Feedback System is a role-based web application that st
 ### 🎓 Student Portal
 | Feature | Description |
 |---|---|
-| Dashboard | Overview of internship progress, key stats, and timeline |
-| Feedback Viewer | Read company evaluations with detailed rating breakdowns |
-| Feedback Submission | Rate and review the internship experience (mentorship, environment, etc.) |
-| Profile | View personal details, university info, skills, tasks, and internship timeline |
-| Downloads | Download feedback reports, certificates, and analysis PDFs |
+<<<<
 
 ### 🏢 Company Portal
 | Feature | Description |
@@ -219,36 +215,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
   "name": "Alex Johnson",
   "password_hash": "<bcrypt_hash>",
   "role": "student | company",
-  "company_id": "ObjectId | null",
-  "student_id": "ObjectId | null",
-  "is_active": true,
-  "last_login_at": "ISODate | null",
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
 
-### `companies` collection
-```json
-{
-  "_id": "ObjectId",
-  "name": "TechCorp Inc.",
-  "contact_email": "admin@techcorp.com",
-  "admin_user_ids": ["ObjectId"],
-  "is_active": true,
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
-
-### `students` collection
-```json
-{
-  "_id": "ObjectId",
-  "user_id": "ObjectId",
-  "phone": "+1 (555) 123-4567",
-  "college": "College name",
-  "skills": ["React", "TypeScript"],
   "tasks": [
     {
       "id": "ObjectId",
