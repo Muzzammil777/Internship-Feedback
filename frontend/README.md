@@ -4,10 +4,10 @@ A role-based internship feedback management platform built with React, Vite, Tai
 
 ## Features
 
-- **Student Portal** – Dashboard, profile management, feedback tracking, and downloads
-- **Company Portal** – Student details, feedback form submission, and form editor
-- **Role-based authentication** with demo credentials
-- **Animated UI** with sidebar navigation (collapsible)
+- Student Portal – Dashboard, profile management, feedback tracking, and downloads
+- Company Portal – Student details, feedback form submission, and form editor
+- Role-based authentication with demo credentials
+- Animated UI with sidebar navigation (collapsible)
 
 ## Getting Started
 

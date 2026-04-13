@@ -4,7 +4,7 @@
 
 # MoviCloud - Internship Feedback System
 
-**A full-stack platform for managing internship evaluations between companies and students.**
+A full-stack platform for managing internship evaluations between companies and students.
 
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -19,7 +19,7 @@
 
 ## 📋 Overview
 
-The **MoviCloud Internship Feedback System** is a role-based web application that streamlines the internship evaluation process. Companies can assess student interns across multiple performance metrics, while students can review their evaluations and share feedback about their internship experience — all in one centralized platform.
+The MoviCloud Internship Feedback System is a role-based web application that streamlines the internship evaluation process. Companies can assess student interns across multiple performance metrics, while students can review their evaluations and share feedback about their internship experience — all in one centralized platform.
 
 ---
 
@@ -28,19 +28,19 @@ The **MoviCloud Internship Feedback System** is a role-based web application tha
 ### 🎓 Student Portal
 | Feature | Description |
 |---|---|
-| **Dashboard** | Overview of internship progress, key stats, and timeline |
-| **Feedback Viewer** | Read company evaluations with detailed rating breakdowns |
-| **Feedback Submission** | Rate and review the internship experience (mentorship, environment, etc.) |
-| **Profile** | View personal details, university info, skills, tasks, and internship timeline |
-| **Downloads** | Download feedback reports, certificates, and analysis PDFs |
+| Dashboard | Overview of internship progress, key stats, and timeline |
+| Feedback Viewer | Read company evaluations with detailed rating breakdowns |
+| Feedback Submission | Rate and review the internship experience (mentorship, environment, etc.) |
+| Profile | View personal details, university info, skills, tasks, and internship timeline |
+| Downloads | Download feedback reports, certificates, and analysis PDFs |
 
 ### 🏢 Company Portal
 | Feature | Description |
 |---|---|
-| **Student Directory** | Browse all interns, search/filter, and view detailed student profiles |
-| **Feedback Form** | Evaluate students across 8 performance metrics with sliders and written comments |
-| **Form Editor** | Customize both feedback form templates (Company→Student and Student→Company) |
-| **Add Student** | Create student accounts with login credentials directly from the dashboard |
+| Student Directory | Browse all interns, search/filter, and view detailed student profiles |
+| Feedback Form | Evaluate students across 8 performance metrics with sliders and written comments |
+| Form Editor | Customize both feedback form templates (Company→Student and Student→Company) |
+| Add Student | Create student accounts with login credentials directly from the dashboard |
 
 ---
 
@@ -56,16 +56,16 @@ MoviCloud Internship Feedback
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend** | React 18 + TypeScript | UI framework |
-| **Build Tool** | Vite 6 | Dev server & bundler |
-| **Styling** | Tailwind CSS v4 | Utility-first CSS |
-| **UI Components** | Radix UI / shadcn | Accessible component primitives |
-| **Animations** | Framer Motion (motion) | Page & micro-animations |
-| **Icons** | Lucide React | Icon library |
-| **Routing** | React Router v7 | Client-side routing |
-| **Charts** | Recharts | Data visualization |
-| **Backend** | FastAPI (Python) | REST API & auth |
-| **Database** | MongoDB | Document store for users, feedback, forms |
+| Frontend | React 18 + TypeScript | UI framework |
+| Build Tool | Vite 6 | Dev server & bundler |
+| Styling | Tailwind CSS v4 | Utility-first CSS |
+| UI Components | Radix UI / shadcn | Accessible component primitives |
+| Animations | Framer Motion (motion) | Page & micro-animations |
+| Icons | Lucide React | Icon library |
+| Routing | React Router v7 | Client-side routing |
+| Charts | Recharts | Data visualization |
+| Backend | FastAPI (Python) | REST API & auth |
+| Database | MongoDB | Document store for users, feedback, forms |
 
 ---
 
@@ -113,14 +113,14 @@ frontend/
 
 ## 🔐 Authentication & Roles
 
-The system uses **role-based access control** with two roles:
+The system uses role-based access control with two roles:
 
 | Role | Demo Credentials | Redirects to |
 |---|---|---|
-| **Student** | `student@example.com` / `123456` | `/student/dashboard` |
-| **Company** | `admin@example.com` / `123456` | `/company/student-details` |
+| Student | `student@example.com` / `123456` | `/student/dashboard` |
+| Company | `admin@example.com` / `123456` | `/company/student-details` |
 
-> **Note:** Authentication currently uses a mock `AuthContext`. Backend integration with FastAPI + JWT will replace this.
+> Note: Authentication currently uses a mock `AuthContext`. Backend integration with FastAPI + JWT will replace this.
 
 ---
 
@@ -166,7 +166,7 @@ npm install
 npm run dev
 ```
 
-The app will be available at **http://localhost:5173**
+The app will be available at http://localhost:5173
 
 ---
 
@@ -192,8 +192,8 @@ cp .env.example .env
 uvicorn main:app --reload
 ```
 
-The API will be available at **http://localhost:8000**
-Interactive API docs: **http://localhost:8000/docs**
+The API will be available at http://localhost:8000
+Interactive API docs: http://localhost:8000/docs
 
 ---
 
@@ -402,7 +402,7 @@ The API schemas preserve frontend field names while storing normalized backend f
 
 ## 📄 License
 
-This project is proprietary software owned by **MoviCloud**. All rights reserved.
+This project is proprietary software owned by MoviCloud. All rights reserved.
 
 ---
 
