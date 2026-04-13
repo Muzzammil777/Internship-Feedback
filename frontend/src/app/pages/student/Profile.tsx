@@ -385,7 +385,7 @@ export default function StudentProfile() {
             transition={{ duration: 0.4, delay: 0.3 }}
             className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
               <div className="flex items-center gap-3">
                 <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-lg shadow-purple-500/50">
                   <Briefcase className="w-6 h-6 text-white" />

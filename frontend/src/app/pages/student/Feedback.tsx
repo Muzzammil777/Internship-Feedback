@@ -105,7 +105,7 @@ export default function StudentFeedback() {
             transition={{ duration: 0.3 }}
             className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-lg shadow-primary/50">
                 <Building2 className="w-7 h-7 text-white" />
@@ -125,7 +125,7 @@ export default function StudentFeedback() {
           {/* Overall Rating */}
           <div className="mb-10 pb-8 border-b border-border">
             <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 sm:gap-2 text-center sm:text-left">
                 <div>
                   <h3 className="text-lg font-bold text-foreground mb-2">
                     Overall Performance
@@ -231,7 +231,7 @@ export default function StudentFeedback() {
           {/* Recommendation */}
           <div className="mt-8 pt-8 border-t border-border">
             <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 text-center sm:text-left">
                 <div>
                   <h3 className="text-lg font-bold text-foreground mb-2">
                     Hiring Recommendation
@@ -260,7 +260,7 @@ export default function StudentFeedback() {
             transition={{ duration: 0.3 }}
             className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
             <div className="flex items-center gap-4">
               <div className="p-4 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-lg shadow-teal-500/50">
                 <MessageSquare className="w-7 h-7 text-white" />
@@ -291,7 +291,7 @@ export default function StudentFeedback() {
               <div className="space-y-6">
                 {/* Learning Experience */}
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-purple-500 rounded-lg">
                         <GraduationCap className="w-5 h-5 text-white" />
@@ -311,7 +311,7 @@ export default function StudentFeedback() {
 
                 {/* Mentorship */}
                 <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-blue-500 rounded-lg">
                         <Users className="w-5 h-5 text-white" />
@@ -331,7 +331,7 @@ export default function StudentFeedback() {
 
                 {/* Work Environment */}
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-100">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-emerald-500 rounded-lg">
                         <Coffee className="w-5 h-5 text-white" />
@@ -351,7 +351,7 @@ export default function StudentFeedback() {
 
                 {/* Communication */}
                 <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
-                  <div className="flex items-center justify-between mb-3">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
                     <div className="flex items-center gap-3">
                       <div className="p-2 bg-amber-500 rounded-lg">
                         <MessageSquare className="w-5 h-5 text-white" />

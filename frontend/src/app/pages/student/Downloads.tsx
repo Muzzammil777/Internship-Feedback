@@ -55,7 +55,7 @@ export default function StudentDownloads() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <Download className="w-5 h-5 text-primary" />
@@ -66,8 +66,8 @@ export default function StudentDownloads() {
                   Download your feedback reports and certificates
                 </p>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-xl border border-primary/20">
-                <File className="w-5 h-5 text-primary" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-xl border border-primary/20 whitespace-nowrap">
+                <File className="w-5 h-5 text-primary shrink-0" />
                 <span className="font-semibold text-primary">{downloadItems.length} files</span>
               </div>
             </div>

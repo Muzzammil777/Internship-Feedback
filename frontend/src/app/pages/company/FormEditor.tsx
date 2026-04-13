@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, Reorder } from "motion/react";
 import { useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -215,19 +215,19 @@ export default function CompanyFormEditor() {
             </div>
 
             <div className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto">
-              <div className="space-y-4">
+              <Reorder.Group axis="y" values={fields} onReorder={setFields} className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {fields.map((field, index) => {
                     const FieldIcon = getFieldIcon(field.type);
                     return (
-                      <motion.div
+                      <Reorder.Item
+                        value={field}
                         key={field.id}
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        layout
-                        className="bg-gradient-to-r from-secondary/30 to-secondary/50 border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow"
+                        className="bg-gradient-to-r from-secondary/30 to-secondary/50 border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow relative"
                       >
                         <div className="flex items-start gap-3">
                           {/* Drag Handle */}
@@ -321,7 +321,7 @@ export default function CompanyFormEditor() {
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-                      </motion.div>
+                      </Reorder.Item>
                     );
                   })}
                 </AnimatePresence>
@@ -333,7 +333,7 @@ export default function CompanyFormEditor() {
                     <p className="text-sm mt-1">Click "Add Field" to get started</p>
                   </div>
                 )}
-              </div>
+              </Reorder.Group>
             </div>
           </motion.div>
 

@@ -409,13 +409,13 @@ export default function CompanyFeedbackForm() {
                     }
                     withRing={true}
                   />
-                  <div className="flex-1">
-                    <div className="flex items-start justify-between mb-4">
+                  <div className="flex-1 w-full text-center sm:text-left">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 mb-4">
                       <div>
                         <h1 className="text-xl sm:text-3xl font-bold text-foreground mb-2">
                           {selectedStudent.name}
                         </h1>
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
                           <Building2 className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-foreground">
                             {selectedStudent.department}
@@ -423,32 +423,36 @@ export default function CompanyFeedbackForm() {
                         </div>
                       </div>
                       {currentFeedback.submitted ? (
-                        <div className="px-4 py-2 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-sm flex items-center gap-2">
+                        <div className="px-4 py-2 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-sm flex items-center gap-2 m-auto sm:m-0">
                           <CheckCircle2 className="w-4 h-4" />
                           Completed
                         </div>
                       ) : (
-                        <div className="px-4 py-2 bg-amber-100 text-amber-700 border border-amber-200 rounded-xl font-bold text-sm flex items-center gap-2">
+                        <div className="px-4 py-2 bg-amber-100 text-amber-700 border border-amber-200 rounded-xl font-bold text-sm flex items-center gap-2 m-auto sm:m-0">
                           <Clock className="w-4 h-4" />
                           Pending
                         </div>
                       )}
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex items-center gap-2">
-                        <Briefcase className="w-4 h-4 text-purple-600" />
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 p-1.5 bg-purple-100 rounded-md">
+                          <Briefcase className="w-4 h-4 text-purple-600" />
+                        </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Project</p>
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Project</p>
+                          <p className="text-sm font-bold text-foreground">
                             {selectedStudent.projectTitle}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-emerald-600" />
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 p-1.5 bg-emerald-100 rounded-md">
+                          <Calendar className="w-4 h-4 text-emerald-600" />
+                        </div>
                         <div>
-                          <p className="text-xs text-muted-foreground">Duration</p>
-                          <p className="text-sm font-semibold text-foreground">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Duration</p>
+                          <p className="text-sm font-bold text-foreground">
                             {selectedStudent.duration}
                           </p>
                         </div>
@@ -586,7 +590,7 @@ export default function CompanyFeedbackForm() {
                     <Label className="font-semibold">
                       Would you hire this intern for a full-time position?
                     </Label>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       {["Highly Recommended", "Recommended", "Not Recommended"].map(
                         (option) => (
                           <motion.button
