@@ -36,7 +36,7 @@ export default function StudentFeedback() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -46,7 +46,7 @@ export default function StudentFeedback() {
               <MessageSquare className="w-5 h-5 text-primary" />
               <span className="text-sm font-semibold text-primary">Feedback</span>
             </div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
               Internship Feedback
             </h1>
             <p className="text-muted-foreground text-lg">
@@ -57,7 +57,7 @@ export default function StudentFeedback() {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
         {/* Toggle Tabs */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

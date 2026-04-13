@@ -11,8 +11,10 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
+  Menu,
+  X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Logo from "../components/shared/Logo";
 import { useAuth } from "../context/AuthContext";
 
@@ -21,6 +23,7 @@ export default function RootLayout() {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   const currentRole = user?.role || "student";
 
@@ -46,118 +49,188 @@ export default function RootLayout() {
     navigate("/");
   };
 
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setIsMobileOpen(false);
+  }, [location.pathname]);
+
+  // Close mobile sidebar on window resize to desktop
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsMobileOpen(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const sidebarContent = (
+    <>
+      {/* Logo / Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="relative p-6 border-b border-border overflow-hidden"
+      >
+        {/* Subtle gradient background */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-50 to-transparent opacity-60" />
+
+        {/* Logo content and collapse/close button */}
+        <div className="relative z-10 flex items-center justify-between">
+          <div className={isCollapsed && !isMobileOpen ? "mx-auto" : ""}>
+            <Logo size="md" variant={isCollapsed && !isMobileOpen ? "icon" : "full"} />
+          </div>
+          {/* Close button for mobile */}
+          <button
+            onClick={() => setIsMobileOpen(false)}
+            className="md:hidden p-1.5 rounded-lg hover:bg-secondary/50 transition-colors"
+          >
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+          {/* Collapse button for desktop */}
+          {!isCollapsed && (
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => setIsCollapsed(true)}
+              className="hidden md:block p-1.5 rounded-lg hover:bg-secondary/50 transition-colors"
+            >
+              <ChevronLeft className="w-4 h-4 text-muted-foreground" />
+            </motion.button>
+          )}
+        </div>
+
+        {/* Decorative accent line */}
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-purple-500 to-transparent opacity-30" />
+      </motion.div>
+
+      {/* Navigation */}
+      <nav className="flex-1 p-4 space-y-2">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = isActive(item.path);
+
+          return (
+            <Link key={item.path} to={item.path}>
+              <motion.div
+                whileHover={{ x: isCollapsed && !isMobileOpen ? 0 : 4 }}
+                whileTap={{ scale: 0.98 }}
+                className={`relative flex items-center gap-3 ${
+                  isCollapsed && !isMobileOpen ? "px-0 justify-center" : "px-4"
+                } py-3 rounded-xl transition-all duration-200 ${
+                  active
+                    ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                }`}
+                title={isCollapsed && !isMobileOpen ? item.label : undefined}
+              >
+                {active && !(isCollapsed && !isMobileOpen) && (
+                  <motion.div
+                    layoutId="activeIndicator"
+                    className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                  />
+                )}
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <AnimatePresence>
+                  {(!(isCollapsed && !isMobileOpen)) && (
+                    <motion.span
+                      initial={{ opacity: 0, width: 0 }}
+                      animate={{ opacity: 1, width: "auto" }}
+                      exit={{ opacity: 0, width: 0 }}
+                      className="font-semibold text-sm whitespace-nowrap overflow-hidden"
+                    >
+                      {item.label}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* Logout Button */}
+      <div className="p-4 border-t border-border">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleLogout}
+          className={`w-full flex items-center gap-3 ${
+            isCollapsed && !isMobileOpen ? "px-0 justify-center" : "px-4"
+          } py-3 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-red-50 hover:text-red-600`}
+          title={isCollapsed && !isMobileOpen ? "Logout" : undefined}
+        >
+          <LogOut className="w-5 h-5 flex-shrink-0" />
+          <AnimatePresence>
+            {(!(isCollapsed && !isMobileOpen)) && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                className="font-semibold text-sm whitespace-nowrap overflow-hidden"
+              >
+                Logout
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex h-screen bg-background">
-      {/* Sidebar */}
+      {/* Mobile Header Bar */}
+      <div className="fixed top-0 left-0 right-0 z-40 md:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
+        <button
+          onClick={() => setIsMobileOpen(true)}
+          className="p-2 rounded-lg hover:bg-secondary transition-colors"
+        >
+          <Menu className="w-5 h-5 text-foreground" />
+        </button>
+        <Logo size="sm" variant="full" />
+        <div className="w-9" /> {/* Spacer for centering */}
+      </div>
+
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Sidebar Drawer */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.aside
+            initial={{ x: "-100%" }}
+            animate={{ x: 0 }}
+            exit={{ x: "-100%" }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="fixed top-0 left-0 bottom-0 w-72 bg-card border-r border-border flex flex-col shadow-2xl z-50 md:hidden"
+          >
+            {sidebarContent}
+          </motion.aside>
+        )}
+      </AnimatePresence>
+
+      {/* Desktop Sidebar */}
       <motion.aside
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1, width: isCollapsed ? 80 : 256 }}
         transition={{ duration: 0.3 }}
-        className="bg-card border-r border-border flex flex-col shadow-lg relative"
+        className="hidden md:flex bg-card border-r border-border flex-col shadow-lg relative"
       >
-        {/* Logo / Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="relative p-6 border-b border-border overflow-hidden"
-        >
-          {/* Subtle gradient background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-purple-50 to-transparent opacity-60" />
-
-          {/* Logo content and collapse button */}
-          <div className="relative z-10 flex items-center justify-between">
-            <div className={isCollapsed ? "mx-auto" : ""}>
-              <Logo size="md" variant={isCollapsed ? "icon" : "full"} />
-            </div>
-            {!isCollapsed && (
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setIsCollapsed(true)}
-                className="p-1.5 rounded-lg hover:bg-secondary/50 transition-colors"
-              >
-                <ChevronLeft className="w-4 h-4 text-muted-foreground" />
-              </motion.button>
-            )}
-          </div>
-
-          {/* Decorative accent line */}
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-primary via-purple-500 to-transparent opacity-30" />
-        </motion.div>
-
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
-
-            return (
-              <Link key={item.path} to={item.path}>
-                <motion.div
-                  whileHover={{ x: isCollapsed ? 0 : 4 }}
-                  whileTap={{ scale: 0.98 }}
-                  className={`relative flex items-center gap-3 ${
-                    isCollapsed ? "px-0 justify-center" : "px-4"
-                  } py-3 rounded-xl transition-all duration-200 ${
-                    active
-                      ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
-                      : "text-muted-foreground hover:bg-secondary hover:text-foreground"
-                  }`}
-                  title={isCollapsed ? item.label : undefined}
-                >
-                  {active && !isCollapsed && (
-                    <motion.div
-                      layoutId="activeIndicator"
-                      className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-white rounded-r-full"
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <AnimatePresence>
-                    {!isCollapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, width: 0 }}
-                        animate={{ opacity: 1, width: "auto" }}
-                        exit={{ opacity: 0, width: 0 }}
-                        className="font-semibold text-sm whitespace-nowrap overflow-hidden"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Logout Button */}
-        <div className="p-4 border-t border-border">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={handleLogout}
-            className={`w-full flex items-center gap-3 ${
-              isCollapsed ? "px-0 justify-center" : "px-4"
-            } py-3 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-red-50 hover:text-red-600`}
-            title={isCollapsed ? "Logout" : undefined}
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            <AnimatePresence>
-              {!isCollapsed && (
-                <motion.span
-                  initial={{ opacity: 0, width: 0 }}
-                  animate={{ opacity: 1, width: "auto" }}
-                  exit={{ opacity: 0, width: 0 }}
-                  className="font-semibold text-sm whitespace-nowrap overflow-hidden"
-                >
-                  Logout
-                </motion.span>
-              )}
-            </AnimatePresence>
-          </motion.button>
-        </div>
+        {sidebarContent}
 
         {/* Expand Button (when collapsed) */}
         <AnimatePresence>
@@ -178,7 +251,7 @@ export default function RootLayout() {
       </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pt-14 md:pt-0">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}

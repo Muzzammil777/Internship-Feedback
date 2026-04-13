@@ -263,7 +263,7 @@ export default function CompanyStudentDetails() {
       <div className="min-h-full bg-background">
         {/* Header */}
         <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-          <div className="max-w-7xl mx-auto px-8 py-10">
+          <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -275,7 +275,7 @@ export default function CompanyStudentDetails() {
                     <Users className="w-5 h-5 text-primary" />
                     <span className="text-sm font-semibold text-primary">Student Directory</span>
                   </div>
-                  <h1 className="text-4xl font-bold text-foreground mb-2">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
                     Student Directory
                   </h1>
                   <p className="text-muted-foreground text-lg">
@@ -309,7 +309,7 @@ export default function CompanyStudentDetails() {
         </div>
 
         {/* Content */}
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
           {/* Search Bar */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -688,7 +688,7 @@ export default function CompanyStudentDetails() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-        <div className="max-w-6xl mx-auto px-8 py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -704,7 +704,7 @@ export default function CompanyStudentDetails() {
             </Button>
 
             {/* Profile Header Section */}
-            <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
+            <div className="bg-card border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* LEFT - Large Student Photo */}
                 <div className="flex-shrink-0">
@@ -729,7 +729,7 @@ export default function CompanyStudentDetails() {
                 {/* RIGHT - Student Information */}
                 <div className="flex-1 min-w-0">
                   {/* Name */}
-                  <h1 className="text-4xl font-bold text-foreground mb-3">
+                  <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-3">
                     {selectedStudent.name}
                   </h1>
 
@@ -805,7 +805,7 @@ export default function CompanyStudentDetails() {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
         <div className="space-y-8">
           {/* Personal Information */}
           <motion.div

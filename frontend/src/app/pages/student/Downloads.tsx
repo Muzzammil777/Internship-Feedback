@@ -49,7 +49,7 @@ export default function StudentDownloads() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -61,7 +61,7 @@ export default function StudentDownloads() {
                   <Download className="w-5 h-5 text-primary" />
                   <span className="text-sm font-semibold text-primary">Downloads</span>
                 </div>
-                <h1 className="text-4xl font-bold text-foreground mb-2">Downloads</h1>
+                <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">Downloads</h1>
                 <p className="text-muted-foreground text-lg">
                   Download your feedback reports and certificates
                 </p>
@@ -76,7 +76,7 @@ export default function StudentDownloads() {
       </div>
 
       {/* Content */}
-      <div className="max-w-5xl mx-auto px-8 py-8">
+      <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
         <div className="space-y-5">
           {downloadItems.map((item, index) => {
             const Icon = item.icon;

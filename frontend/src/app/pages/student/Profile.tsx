@@ -103,7 +103,7 @@ export default function StudentProfile() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -113,7 +113,7 @@ export default function StudentProfile() {
               <User className="w-5 h-5 text-primary" />
               <span className="text-sm font-semibold text-primary">My Profile</span>
             </div>
-            <h1 className="text-4xl font-bold text-foreground mb-2">
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
               Profile & Details
             </h1>
             <p className="text-muted-foreground text-lg" style={{ paddingBottom: "40px" }}>
@@ -121,7 +121,7 @@ export default function StudentProfile() {
             </p>
 
             {/* Profile Header Section */}
-            <div className="bg-card border border-border rounded-3xl p-8 shadow-xl">
+            <div className="bg-card border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl">
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* LEFT - Large Profile Photo with Upload */}
                 <div className="flex-shrink-0">
@@ -184,7 +184,7 @@ export default function StudentProfile() {
                 {/* RIGHT - Student Information */}
                 <div className="flex-1 min-w-0">
                   {/* Name */}
-                  <h2 className="text-4xl font-bold text-foreground mb-3">
+                  <h2 className="text-2xl sm:text-4xl font-bold text-foreground mb-3">
                     {formData.name}
                   </h2>
 
@@ -260,7 +260,7 @@ export default function StudentProfile() {
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto px-8 py-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
         <form className="space-y-8">
           {/* Personal Information */}
           <motion.div

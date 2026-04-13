@@ -17,7 +17,7 @@ export default function StudentDashboard() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-8 py-10">
+        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -29,7 +29,7 @@ export default function StudentDashboard() {
                 <Sparkles className="w-6 h-6 text-primary" />
                 <span className="text-sm font-semibold text-primary">Good morning!</span>
               </div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">
+              <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
                 Welcome back, Alex
               </h1>
               <p className="text-muted-foreground text-lg">
@@ -41,7 +41,7 @@ export default function StudentDashboard() {
       </div>
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
         {/* Status Cards */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -138,7 +138,7 @@ export default function StudentDashboard() {
                 a responsive, accessible interface serving 100K+ daily users.
               </p>
             </div>
-            <div className="grid grid-cols-3 gap-6 pt-4 border-t border-border">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-border">
               <div className="text-center">
                 <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Company</p>
                 <p className="font-bold text-foreground text-lg">TechCorp Inc.</p>

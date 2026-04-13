@@ -51,7 +51,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4 sm:p-8 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
@@ -89,7 +89,7 @@ export default function Login() {
       >
         <div className="bg-card border border-border rounded-3xl shadow-2xl overflow-hidden">
           {/* Header with Logo */}
-          <div className="bg-gradient-to-r from-primary via-purple-600 to-accent p-10 text-center relative overflow-hidden">
+          <div className="bg-gradient-to-r from-primary via-purple-600 to-accent p-6 sm:p-10 text-center relative overflow-hidden">
             {/* Decorative elements */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
             <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
@@ -106,7 +106,7 @@ export default function Login() {
               className="relative z-10"
             >
               {/* Logo Container */}
-              <div className="w-28 h-28 mx-auto mb-5 bg-white rounded-2xl shadow-2xl flex items-center justify-center p-3">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 mx-auto mb-4 sm:mb-5 bg-white rounded-2xl shadow-2xl flex items-center justify-center p-2 sm:p-3">
                 <img
                   src="/favicon.png"
                   alt="MoviCloud Logo"
@@ -119,7 +119,7 @@ export default function Login() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="text-2xl font-bold text-white relative z-10 mb-2"
+              className="text-xl sm:text-2xl font-bold text-white relative z-10 mb-2"
             >
               Internship Feedback            </motion.h1>
             <motion.p
@@ -133,7 +133,7 @@ export default function Login() {
           </div>
 
           {/* Form Content */}
-          <div className="p-8">
+          <div className="p-5 sm:p-8">
             <form onSubmit={handleLogin} className="space-y-6">
               {/* Role Selection */}
               <motion.div

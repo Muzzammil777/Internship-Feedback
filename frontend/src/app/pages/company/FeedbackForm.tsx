@@ -201,13 +201,13 @@ export default function CompanyFeedbackForm() {
   );
 
   return (
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
       {/* LEFT PANEL - Student List */}
       <motion.div
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="w-96 bg-card border-r border-border flex flex-col shadow-lg"
+        className="hidden md:flex w-96 bg-card border-r border-border flex-col shadow-lg"
       >
         {/* Header */}
         <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-purple-50">
@@ -315,6 +315,37 @@ export default function CompanyFeedbackForm() {
         </div>
       </motion.div>
 
+      {/* MOBILE - Horizontal Student Selector */}
+      <div className="md:hidden bg-card border-b border-border p-4">
+        <div className="mb-3">
+          <h2 className="text-sm font-bold text-foreground">
+            Student Evaluations — {completedCount}/{students.length} done
+          </h2>
+        </div>
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {students.map((student, index) => {
+            const isSelected = student.id === selectedStudentId;
+            const isCompleted = feedbackStatus[student.id]?.submitted;
+            const gradient = avatarGradients[index % avatarGradients.length];
+            return (
+              <button
+                key={student.id}
+                onClick={() => setSelectedStudentId(student.id)}
+                className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
+                  isSelected
+                    ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
+                    : "bg-secondary/50 text-foreground"
+                }`}
+              >
+                <StudentAvatar name={student.name} size="sm" gradient={gradient} withRing={false} />
+                <span className="text-xs font-semibold whitespace-nowrap">{student.name.split(' ')[0]}</span>
+                {isCompleted && <CheckCircle2 className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-emerald-600'}`} />}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* RIGHT PANEL - Feedback Form */}
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="wait">
@@ -362,11 +393,11 @@ export default function CompanyFeedbackForm() {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="p-8"
+              className="p-4 sm:p-8"
             >
               {/* Student Profile Header */}
-              <div className="mb-8 bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 rounded-2xl p-8 border border-border shadow-md">
-                <div className="flex items-start gap-6">
+              <div className="mb-6 sm:mb-8 bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-border shadow-md">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
                   <StudentAvatar
                     name={selectedStudent.name}
                     size="xl"
@@ -381,7 +412,7 @@ export default function CompanyFeedbackForm() {
                   <div className="flex-1">
                     <div className="flex items-start justify-between mb-4">
                       <div>
-                        <h1 className="text-3xl font-bold text-foreground mb-2">
+                        <h1 className="text-xl sm:text-3xl font-bold text-foreground mb-2">
                           {selectedStudent.name}
                         </h1>
                         <div className="flex items-center gap-2 mb-3">
@@ -403,7 +434,7 @@ export default function CompanyFeedbackForm() {
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="flex items-center gap-2">
                         <Briefcase className="w-4 h-4 text-purple-600" />
                         <div>
