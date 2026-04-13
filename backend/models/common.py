@@ -123,6 +123,8 @@ def normalize_rating_map(
         metric = key.strip()
         if not metric:
             raise ValueError("Rating keys cannot be blank")
+        if metric in cleaned:
+            raise ValueError(f"Duplicate rating metric after normalizing: '{metric}'")
         if value < min_value or value > max_value:
             raise ValueError(f"Rating for '{metric}' must be between {min_value} and {max_value}")
         cleaned[metric] = int(value)

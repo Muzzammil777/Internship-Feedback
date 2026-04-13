@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
 
 from database.indexes import create_indexes
 from database.mongodb import get_database
 
+load_dotenv()
 
 app = FastAPI(
     title="MoviCloud Internship Feedback API",

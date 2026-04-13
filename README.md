@@ -177,9 +177,9 @@ The app will be available at http://localhost:5173
 cd backend
 
 # Create and activate a virtual environment
-python -m venv venv
-venv\Scripts\activate        # Windows
-source venv/bin/activate     # macOS/Linux
+python -m venv .venv
+.venv\Scripts\activate       # Windows
+source .venv/bin/activate    # macOS/Linux
 
 # Install dependencies
 pip install -r requirements.txt

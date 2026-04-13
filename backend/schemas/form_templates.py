@@ -1,18 +1,12 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import List, Optional
 
 from pydantic import Field, field_validator
 
-from models.common import TemplateFieldType, ensure_unique_values
+from models.common import TemplateFieldType, TemplateType, ensure_unique_values
 
 from .common import APIModel
-
-
-class FormTypePublic(str, Enum):
-    COMPANY_TO_STUDENT = "companyToStudent"
-    STUDENT_TO_COMPANY = "studentToCompany"
 
 
 class FormFieldPayload(APIModel):
@@ -42,7 +36,7 @@ class FormTemplateUpdateRequest(APIModel):
 
 class FormTemplateResponse(APIModel):
     id: str
-    type: FormTypePublic
+    type: TemplateType
     fields: List[FormFieldPayload]
     version: int
     is_active: bool = Field(alias="isActive")
