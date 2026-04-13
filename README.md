@@ -2,7 +2,7 @@
 
 <img src="frontend/public/favicon.png" alt="MoviCloud Logo" width="80" height="80" />
 
-# MoviCloud — Internship Feedback System
+# MoviCloud - Internship Feedback System
 
 **A full-stack platform for managing internship evaluations between companies and students.**
 
