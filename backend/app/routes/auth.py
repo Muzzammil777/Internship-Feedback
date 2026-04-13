@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
 
@@ -6,6 +8,7 @@ from app.core.database import get_database
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 
 class LoginRequest(BaseModel):
@@ -20,7 +23,8 @@ async def login(payload: LoginRequest) -> dict[str, str]:
     try:
         users = get_database()["users"]
         user = await users.find_one({"email": payload.email, "password": payload.password})
-    except Exception:
+    except Exception as e:
+        logger.warning("MongoDB lookup failed, falling back to demo credentials. Error: %s", e)
         user = None
 
     if user is None:

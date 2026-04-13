@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import SkillTag from "../../components/shared/SkillTag";
 import StudentAvatar from "../../components/shared/StudentAvatar";
@@ -47,12 +47,17 @@ interface Student {
   status: "active" | "completed" | "pending";
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+
 export default function CompanyStudentDetails() {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [apiError, setApiError] = useState("");
+  const [students, setStudents] = useState<Student[]>([]);
+  const [isLoadingStudents, setIsLoadingStudents] = useState(true);
 
   const [newStudentForm, setNewStudentForm] = useState({
     name: "",
@@ -62,121 +67,26 @@ export default function CompanyStudentDetails() {
     COLLEGE: "",
   });
 
-  const students: Student[] = [
-    {
-      id: "1",
-      name: "Alex Johnson",
-      email: "alex.johnson@email.com",
-      phone: "+1 (555) 123-4567",
-      COLLEGE: "College name",
-      Role: "Engineering - Frontend",
-      supervisor: "Sarah Mitchell",
-      supervisorEmail: "sarah.mitchell@techcorp.com",
-      startDate: "January 15, 2026",
-      endDate: "March 30, 2026",
-      duration: "12 weeks",
-      tasks: [
-        {
-          id: "1",
-          title: "E-Commerce Platform Redesign",
-          description: "Led the frontend development for a complete redesign of the company's e-commerce platform. Implemented modern React patterns, optimized performance, and created a responsive, accessible interface.",
-        },
-        {
-          id: "2",
-          title: "Performance Optimization",
-          description: "Optimized application performance, reducing load times by 40% through code splitting, lazy loading, and efficient state management.",
-        },
-        {
-          id: "3",
-          title: "Component Library Development",
-          description: "Built a reusable component library with comprehensive documentation, improving development efficiency across teams.",
-        },
-      ],
-      skills: ["React", "TypeScript", "Node.js", "PostgreSQL", "AWS"],
-      status: "completed",
-    },
-    {
-      id: "2",
-      name: "Emma Chen",
-      email: "emma.chen@email.com",
-      phone: "+1 (555) 234-5678",
-      COLLEGE: "Tech Institute",
-      Role: "Engineering - Backend",
-      supervisor: "Michael Brown",
-      supervisorEmail: "michael.brown@techcorp.com",
-      startDate: "February 1, 2026",
-      endDate: "April 15, 2026",
-      duration: "10 weeks",
-      tasks: [
-        {
-          id: "1",
-          title: "API Gateway Migration",
-          description: "Spearheaded the migration of legacy APIs to a modern microservices architecture. Designed and implemented RESTful services using Node.js and Express.",
-        },
-        {
-          id: "2",
-          title: "Redis Caching Implementation",
-          description: "Integrated Redis caching layer to improve API response times and reduce database load.",
-        },
-      ],
-      skills: ["Node.js", "Express", "MongoDB", "Redis", "Docker"],
-      status: "active",
-    },
-    {
-      id: "3",
-      name: "Marcus Williams",
-      email: "marcus.williams@email.com",
-      phone: "+1 (555) 345-6789",
-      COLLEGE: "Engineering College",
-      Role: "Data Science",
-      supervisor: "Lisa Anderson",
-      supervisorEmail: "lisa.anderson@techcorp.com",
-      startDate: "January 20, 2026",
-      endDate: "April 5, 2026",
-      duration: "11 weeks",
-      tasks: [
-        {
-          id: "1",
-          title: "Customer Analytics Dashboard",
-          description: "Built an interactive analytics dashboard for customer behavior analysis using Python and React. Created real-time visualization components.",
-        },
-        {
-          id: "2",
-          title: "ML Model Development",
-          description: "Implemented machine learning models for customer segmentation and churn prediction using scikit-learn.",
-        },
-      ],
-      skills: ["Python", "Pandas", "Scikit-learn", "React", "D3.js"],
-      status: "completed",
-    },
-    {
-      id: "4",
-      name: "Sophia Martinez",
-      email: "sophia.martinez@email.com",
-      phone: "+1 (555) 456-7890",
-      COLLEGE: "Design COLLEGE",
-      Role: "Product Design",
-      supervisor: "David Kim",
-      supervisorEmail: "david.kim@techcorp.com",
-      startDate: "February 10, 2026",
-      endDate: "May 1, 2026",
-      duration: "12 weeks",
-      tasks: [
-        {
-          id: "1",
-          title: "Mobile App Redesign",
-          description: "Led the complete redesign of the company's mobile application, focusing on improving user experience and accessibility. Conducted user research and created wireframes.",
-        },
-        {
-          id: "2",
-          title: "Design System Creation",
-          description: "Developed comprehensive design system and component library to ensure consistency across all product touchpoints.",
-        },
-      ],
-      skills: ["Figma", "Adobe XD", "User Research", "Prototyping", "UI/UX"],
-      status: "active",
-    },
-  ];
+  // Load students from API on mount
+  useEffect(() => {
+    const fetchStudents = async () => {
+      setIsLoadingStudents(true);
+      try {
+        const res = await fetch(`${API_BASE}/students`);
+        if (res.ok) {
+          const data = await res.json() as Student[];
+          setStudents(data);
+        }
+      } catch {
+        // silently fall back to empty list
+      } finally {
+        setIsLoadingStudents(false);
+      }
+    };
+    void fetchStudents();
+  }, []);
+
+
 
   const filteredStudents = students.filter(
     (student) =>
@@ -194,28 +104,41 @@ export default function CompanyStudentDetails() {
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
+    setApiError("");
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Here you would typically make an API call to create the student
-    console.log("Creating student:", newStudentForm);
-
-    setIsSubmitting(false);
-    setShowSuccess(true);
-
-    // Reset form and close modal after showing success
-    setTimeout(() => {
-      setIsAddModalOpen(false);
-      setShowSuccess(false);
-      setNewStudentForm({
-        name: "",
-        email: "",
-        password: "",
-        Role: "",
-        COLLEGE: "",
+    try {
+      const res = await fetch(`${API_BASE}/students`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newStudentForm.name,
+          email: newStudentForm.email,
+          password: newStudentForm.password,
+          role_title: newStudentForm.Role,
+          college: newStudentForm.COLLEGE,
+        }),
       });
-    }, 1500);
+
+      if (!res.ok) {
+        const err = await res.json() as { detail?: string };
+        throw new Error(err.detail ?? "Failed to create student");
+      }
+
+      const created = await res.json() as Student;
+      // Add to local list immediately without needing a full refetch
+      setStudents((prev) => [...prev, created]);
+      setShowSuccess(true);
+
+      setTimeout(() => {
+        setIsAddModalOpen(false);
+        setShowSuccess(false);
+        setNewStudentForm({ name: "", email: "", password: "", Role: "", COLLEGE: "" });
+      }, 1500);
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const closeModal = () => {
@@ -510,8 +433,22 @@ export default function CompanyStudentDetails() {
                               Student Created Successfully!
                             </h3>
                             <p className="text-sm text-emerald-700">
-                              Login credentials have been generated.
+                              Login credentials have been saved to the database.
                             </p>
+                          </div>
+                        </motion.div>
+                      )}
+                      {apiError && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center gap-3"
+                        >
+                          <X className="w-5 h-5 text-red-600 flex-shrink-0" />
+                          <div>
+                            <h3 className="font-bold text-red-900">Failed to create student</h3>
+                            <p className="text-sm text-red-700">{apiError}</p>
                           </div>
                         </motion.div>
                       )}

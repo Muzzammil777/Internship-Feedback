@@ -31,7 +31,7 @@ The **MoviCloud Internship Feedback System** is a role-based web application tha
 | **Dashboard** | Overview of internship progress, key stats, and timeline |
 | **Feedback Viewer** | Read company evaluations with detailed rating breakdowns |
 | **Feedback Submission** | Rate and review the internship experience (mentorship, environment, etc.) |
-| **Profile** | View personal details, university info, skills, tasks, and internship timeline |
+| **Profile** | View personal details, COLLEGE info, skills, tasks, and internship timeline |
 | **Downloads** | Download feedback reports, certificates, and analysis PDFs |
 
 ### 🏢 Company Portal
@@ -219,8 +219,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
   "email": "alex@example.com",
   "password_hash": "...",
   "role": "student | company",
-  "university": "State University",
-  "department": "Engineering - Frontend",
+  "COLLEGE": "College name",
+  "Role": "Engineering - Frontend",
   "skills": ["React", "TypeScript"],
   "created_at": "ISODate"
 }
