@@ -1,3 +1,5 @@
+"""Student profile and internship domain document models."""
+
 from __future__ import annotations
 
 from datetime import date
@@ -17,6 +19,8 @@ from .common import (
 
 
 class TaskItem(BaseModel):
+    """Task assigned to a student during internship."""
+
     id: str = Field(default_factory=lambda: str(ObjectId()))
     title: str = Field(min_length=1, max_length=180)
     description: str = Field(min_length=1, max_length=3000)
@@ -25,6 +29,8 @@ class TaskItem(BaseModel):
 
 
 class InternshipSnapshot(BaseModel):
+    """Snapshot of internship details for current or historical records."""
+
     company_id: PyObjectId
     role_title: str = Field(min_length=2, max_length=120)
     supervisor_name: str = Field(min_length=2, max_length=120)
@@ -38,6 +44,8 @@ class InternshipSnapshot(BaseModel):
 
     @model_validator(mode="after")
     def validate_dates(self) -> "InternshipSnapshot":
+        """Validate internship date boundaries."""
+
         ensure_start_before_end(
             start_date=self.start_date,
             end_date=self.end_date,
@@ -49,10 +57,14 @@ class InternshipSnapshot(BaseModel):
     @computed_field
     @property
     def duration_weeks(self) -> int:
+        """Return internship duration in weeks."""
+
         return calculate_duration_weeks(start_date=self.start_date, end_date=self.end_date)
 
 
 class StudentDocument(BaseDocument):
+    """MongoDB document for student profile plus internship metadata."""
+
     user_id: PyObjectId
     phone: Optional[str] = Field(default=None, max_length=30)
     college: str = Field(min_length=2, max_length=160)
@@ -68,4 +80,6 @@ class StudentDocument(BaseDocument):
     @field_validator("skills")
     @classmethod
     def normalize_skills(cls, values: List[str]) -> List[str]:
+        """Normalize and de-duplicate skill names."""
+
         return normalize_unique_strings(values)

@@ -1,3 +1,5 @@
+"""Download metadata document model."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -9,6 +11,8 @@ from .common import BaseDocument, DownloadType, PyObjectId, utc_now
 
 
 class DownloadDocument(BaseDocument):
+    """MongoDB document for generated reports and certificates."""
+
     student_id: PyObjectId
     company_id: PyObjectId
 

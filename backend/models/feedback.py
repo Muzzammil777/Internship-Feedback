@@ -1,3 +1,5 @@
+"""Feedback document models for company-to-student and student-to-company flows."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -9,6 +11,8 @@ from .common import BaseDocument, FeedbackType, PyObjectId, normalize_rating_map
 
 
 class FeedbackDocument(BaseDocument):
+    """MongoDB document representing one feedback submission revision."""
+
     feedback_type: FeedbackType
     student_id: PyObjectId
     company_id: PyObjectId
@@ -37,10 +41,14 @@ class FeedbackDocument(BaseDocument):
     @field_validator("ratings")
     @classmethod
     def validate_rating_values(cls, values: Dict[str, int]) -> Dict[str, int]:
+        """Validate rating keys and range constraints."""
+
         return normalize_rating_map(values, min_value=0, max_value=5, max_metrics=32)
 
     @model_validator(mode="after")
     def validate_feedback_type_rules(self) -> "FeedbackDocument":
+        """Enforce feedback-type-specific field constraints."""
+
         if self.feedback_type == FeedbackType.STUDENT_TO_COMPANY and self.recommendation is not None:
             raise ValueError("recommendation is only valid for company_to_student feedback")
         return self

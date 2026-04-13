@@ -1,3 +1,5 @@
+"""Shared model primitives, enums, and validation helpers for backend models."""
+
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -10,6 +12,8 @@ from pydantic.functional_validators import BeforeValidator
 
 
 def _validate_object_id(value: Any) -> str:
+    """Validate and normalize ObjectId input as a string."""
+
     if isinstance(value, ObjectId):
         return str(value)
     if isinstance(value, str) and ObjectId.is_valid(value):
@@ -21,31 +25,43 @@ PyObjectId = Annotated[str, BeforeValidator(_validate_object_id)]
 
 
 def utc_now() -> datetime:
+    """Return current UTC time for document timestamp defaults."""
+
     return datetime.now(timezone.utc)
 
 
 class UserRole(str, Enum):
+    """User roles supported by the platform."""
+
     STUDENT = "student"
     COMPANY = "company"
 
 
 class InternshipStatus(str, Enum):
+    """Lifecycle states for internships."""
+
     ACTIVE = "active"
     COMPLETED = "completed"
     PENDING = "pending"
 
 
 class FeedbackType(str, Enum):
+    """Direction of feedback submission."""
+
     COMPANY_TO_STUDENT = "company_to_student"
     STUDENT_TO_COMPANY = "student_to_company"
 
 
 class TemplateType(str, Enum):
+    """Template variants available for feedback forms."""
+
     COMPANY_TO_STUDENT = "company_to_student"
     STUDENT_TO_COMPANY = "student_to_company"
 
 
 class TemplateFieldType(str, Enum):
+    """Field widget types allowed in dynamic templates."""
+
     TEXT = "text"
     TEXTAREA = "textarea"
     SLIDER = "slider"
@@ -53,12 +69,16 @@ class TemplateFieldType(str, Enum):
 
 
 class DownloadType(str, Enum):
+    """Downloadable document categories."""
+
     FEEDBACK_REPORT = "feedback_report"
     INTERNSHIP_CERTIFICATE = "internship_certificate"
     DETAILED_ANALYSIS = "detailed_analysis"
 
 
 class BaseDocument(BaseModel):
+    """Base MongoDB document schema with id and timestamps."""
+
     id: PyObjectId = Field(default_factory=lambda: str(ObjectId()), alias="_id")
     created_at: datetime = Field(default_factory=utc_now)
     updated_at: datetime = Field(default_factory=utc_now)
@@ -72,6 +92,8 @@ class BaseDocument(BaseModel):
 
 
 def normalize_unique_strings(values: Iterable[str]) -> list[str]:
+    """Return trimmed, case-insensitive unique strings preserving first occurrence."""
+
     seen: set[str] = set()
     cleaned: list[str] = []
     for item in values:
@@ -93,11 +115,15 @@ def ensure_start_before_end(
     start_name: str,
     end_name: str,
 ) -> None:
+    """Raise when end date is before start date."""
+
     if end_date < start_date:
         raise ValueError(f"{end_name} must be on or after {start_name}")
 
 
 def calculate_duration_weeks(*, start_date: date, end_date: date) -> int:
+    """Calculate inclusive duration in weeks between two dates."""
+
     ensure_start_before_end(
         start_date=start_date,
         end_date=end_date,
@@ -115,6 +141,8 @@ def normalize_rating_map(
     max_value: int,
     max_metrics: int = 32,
 ) -> dict[str, int]:
+    """Validate, normalize, and bound a dynamic ratings map."""
+
     if len(values) > max_metrics:
         raise ValueError(f"Too many rating metrics. Maximum allowed is {max_metrics}")
 
@@ -132,6 +160,8 @@ def normalize_rating_map(
 
 
 def ensure_unique_values(values: Iterable[str], *, label: str) -> None:
+    """Raise when duplicate string values are present."""
+
     items = list(values)
     if len(items) != len(set(items)):
         raise ValueError(f"{label} must be unique")
