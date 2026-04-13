@@ -4,7 +4,7 @@
 
 # MoviCloud - Internship Feedback System
 
-**A full-stack platform for managing internship evaluations between companies and students.**
+A full-stack platform for managing internship evaluations between companies and students.
 
 [![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -19,7 +19,7 @@
 
 ## 📋 Overview
 
-The **MoviCloud Internship Feedback System** is a role-based web application that streamlines the internship evaluation process. Companies can assess student interns across multiple performance metrics, while students can review their evaluations and share feedback about their internship experience — all in one centralized platform.
+The MoviCloud Internship Feedback System is a role-based web application that streamlines the internship evaluation process. Companies can assess student interns across multiple performance metrics, while students can review their evaluations and share feedback about their internship experience — all in one centralized platform.
 
 ---
 
@@ -28,19 +28,15 @@ The **MoviCloud Internship Feedback System** is a role-based web application tha
 ### 🎓 Student Portal
 | Feature | Description |
 |---|---|
-| **Dashboard** | Overview of internship progress, key stats, and timeline |
-| **Feedback Viewer** | Read company evaluations with detailed rating breakdowns |
-| **Feedback Submission** | Rate and review the internship experience (mentorship, environment, etc.) |
-| **Profile** | View personal details, COLLEGE info, skills, tasks, and internship timeline |
-| **Downloads** | Download feedback reports, certificates, and analysis PDFs |
+<<<<
 
 ### 🏢 Company Portal
 | Feature | Description |
 |---|---|
-| **Student Directory** | Browse all interns, search/filter, and view detailed student profiles |
-| **Feedback Form** | Evaluate students across 8 performance metrics with sliders and written comments |
-| **Form Editor** | Customize both feedback form templates (Company→Student and Student→Company) |
-| **Add Student** | Create student accounts with login credentials directly from the dashboard |
+| Student Directory | Browse all interns, search/filter, and view detailed student profiles |
+| Feedback Form | Evaluate students across 8 performance metrics with sliders and written comments |
+| Form Editor | Customize both feedback form templates (Company→Student and Student→Company) |
+| Add Student | Create student accounts with login credentials directly from the dashboard |
 
 ---
 
@@ -56,16 +52,16 @@ MoviCloud Internship Feedback
 
 | Layer | Technology | Purpose |
 |---|---|---|
-| **Frontend** | React 18 + TypeScript | UI framework |
-| **Build Tool** | Vite 6 | Dev server & bundler |
-| **Styling** | Tailwind CSS v4 | Utility-first CSS |
-| **UI Components** | Radix UI / shadcn | Accessible component primitives |
-| **Animations** | Framer Motion (motion) | Page & micro-animations |
-| **Icons** | Lucide React | Icon library |
-| **Routing** | React Router v7 | Client-side routing |
-| **Charts** | Recharts | Data visualization |
-| **Backend** | FastAPI (Python) | REST API & auth |
-| **Database** | MongoDB | Document store for users, feedback, forms |
+| Frontend | React 18 + TypeScript | UI framework |
+| Build Tool | Vite 6 | Dev server & bundler |
+| Styling | Tailwind CSS v4 | Utility-first CSS |
+| UI Components | Radix UI / shadcn | Accessible component primitives |
+| Animations | Framer Motion (motion) | Page & micro-animations |
+| Icons | Lucide React | Icon library |
+| Routing | React Router v7 | Client-side routing |
+| Charts | Recharts | Data visualization |
+| Backend | FastAPI (Python) | REST API & auth |
+| Database | MongoDB | Document store for users, feedback, forms |
 
 ---
 
@@ -113,14 +109,14 @@ frontend/
 
 ## 🔐 Authentication & Roles
 
-The system uses **role-based access control** with two roles:
+The system uses role-based access control with two roles:
 
 | Role | Demo Credentials | Redirects to |
 |---|---|---|
-| **Student** | `student@example.com` / `123456` | `/student/dashboard` |
-| **Company** | `admin@example.com` / `123456` | `/company/student-details` |
+| Student | `student@example.com` / `123456` | `/student/dashboard` |
+| Company | `admin@example.com` / `123456` | `/company/student-details` |
 
-> **Note:** Authentication currently uses a mock `AuthContext`. Backend integration with FastAPI + JWT will replace this.
+> Note: Authentication currently uses a mock `AuthContext`. Backend integration with FastAPI + JWT will replace this.
 
 ---
 
@@ -166,7 +162,7 @@ npm install
 npm run dev
 ```
 
-The app will be available at **http://localhost:5173**
+The app will be available at http://localhost:5173
 
 ---
 
@@ -177,9 +173,9 @@ The app will be available at **http://localhost:5173**
 cd backend
 
 # Create and activate a virtual environment
-python -m venv venv
-venv\Scripts\activate        # Windows
-source venv/bin/activate     # macOS/Linux
+python -m venv .venv
+.venv\Scripts\activate       # Windows
+source .venv/bin/activate    # macOS/Linux
 
 # Install dependencies
 pip install -r requirements.txt
@@ -189,11 +185,11 @@ cp .env.example .env
 # Edit .env with your MongoDB connection string and JWT secret
 
 # Run the development server
-uvicorn main:app --reload
+uvicorn app.main:app --reload
 ```
 
-The API will be available at **http://localhost:8000**
-Interactive API docs: **http://localhost:8000/docs**
+The API will be available at http://localhost:8000
+Interactive API docs: http://localhost:8000/docs
 
 ---
 
@@ -215,14 +211,42 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```json
 {
   "_id": "ObjectId",
-  "name": "Alex Johnson",
   "email": "alex@example.com",
-  "password_hash": "...",
+  "name": "Alex Johnson",
+  "password_hash": "<bcrypt_hash>",
   "role": "student | company",
-  "COLLEGE": "College name",
-  "Role": "Engineering - Frontend",
-  "skills": ["React", "TypeScript"],
-  "created_at": "ISODate"
+
+  "tasks": [
+    {
+      "id": "ObjectId",
+      "title": "E-Commerce Platform Redesign",
+      "description": "..."
+    }
+  ],
+  "current_internship": {
+    "company_id": "ObjectId",
+    "role_title": "Engineering - Frontend",
+    "supervisor_name": "Sarah Mitchell",
+    "supervisor_email": "sarah.mitchell@techcorp.com",
+    "start_date": "YYYY-MM-DD",
+    "end_date": "YYYY-MM-DD",
+    "status": "active | completed | pending",
+    "project_title": "E-Commerce Platform Redesign"
+  },
+  "internship_history": [
+    {
+      "company_id": "ObjectId",
+      "role_title": "Engineering Intern",
+      "supervisor_name": "Manager Name",
+      "supervisor_email": "manager@company.com",
+      "start_date": "YYYY-MM-DD",
+      "end_date": "YYYY-MM-DD",
+      "status": "completed",
+      "project_title": "Project Name"
+    }
+  ],
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
 }
 ```
 
@@ -230,21 +254,28 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```json
 {
   "_id": "ObjectId",
+  "feedback_type": "company_to_student | student_to_company",
   "student_id": "ObjectId",
   "company_id": "ObjectId",
-  "type": "company_to_student | student_to_company",
+  "submitted_by_user_id": "ObjectId",
+  "internship_key": "2026-01-15_2026-03-30",
+  "template_id": "ObjectId | null",
   "ratings": {
     "technical": 5,
     "quality": 4,
     "communication": 4,
     "teamwork": 5
   },
-  "overall_rating": 5,
-  "strengths": "...",
-  "improvements": "...",
-  "comments": "...",
-  "recommendation": "Highly Recommended",
-  "submitted_at": "ISODate"
+  "overall_rating": 4.5,
+  "strengths": "Strong ownership and execution.",
+  "improvements": "Can improve cross-team communication.",
+  "comments": "Great internship performance.",
+  "recommendation": "Highly Recommended | null",
+  "revision": 1,
+  "is_latest": true,
+  "submitted_at": "ISODate",
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
 }
 ```
 
@@ -252,13 +283,60 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```json
 {
   "_id": "ObjectId",
+  "company_id": "ObjectId",
   "type": "company_to_student | student_to_company",
   "fields": [
-    { "id": "1", "label": "Technical Skills", "type": "slider", "required": true }
+    {
+      "id": "1",
+      "label": "Technical Skills",
+      "type": "text | textarea | slider | rating",
+      "required": true,
+      "min_value": 1,
+      "max_value": 5,
+      "step": 1,
+      "order": 0,
+      "placeholder": "Optional helper text"
+    }
   ],
+  "version": 1,
+  "is_active": true,
+  "created_at": "ISODate",
   "updated_at": "ISODate"
 }
 ```
+
+### `downloads` collection
+```json
+{
+  "_id": "ObjectId",
+  "student_id": "ObjectId",
+  "company_id": "ObjectId",
+  "document_type": "feedback_report | internship_certificate | detailed_analysis",
+  "title": "Company Feedback Report",
+  "description": "Complete evaluation report.",
+  "file_name": "company-feedback-report.pdf",
+  "file_url": "https://storage.example.com/reports/company-feedback-report.pdf",
+  "mime_type": "application/pdf",
+  "size_bytes": 250880,
+  "generated_at": "ISODate",
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
+}
+```
+
+### Frontend Field Alias Mapping
+
+The API schemas preserve frontend field names while storing normalized backend fields:
+
+- `COLLEGE` ↔ `college`
+- `Role` ↔ `role_title`
+- `supervisorEmail` ↔ `supervisor_email`
+- `startDate` ↔ `start_date`
+- `endDate` ↔ `end_date`
+- `overallRating` ↔ `overall_rating`
+- `templateId` ↔ `template_id`
+
+> Note: Student profile/domain data is intentionally stored in `students` (not `users`) to reduce duplication and support scale.
 
 ---
 
@@ -291,7 +369,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 ## 📄 License
 
-This project is proprietary software owned by **MoviCloud**. All rights reserved.
+This project is proprietary software owned by MoviCloud. All rights reserved.
 
 ---
 
