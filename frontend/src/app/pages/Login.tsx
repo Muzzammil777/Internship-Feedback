@@ -19,10 +19,17 @@ export default function Login() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!selectedRole) {
+      setError("Please select your role before logging in.");
+      return;
+    }
+
     setError("");
 
     void (async () => {
-      const user = await login(email, password);
+      const result = await login(email, password, selectedRole);
+      const user = result.user;
 
       if (user) {
         if (user.role === "student") {
@@ -31,7 +38,11 @@ export default function Login() {
           navigate("/company/student-details");
         }
       } else {
-        setError("Invalid email or password");
+        setError(
+          result.error === "role_mismatch"
+            ? "Selected role does not match this account. Please choose the correct role."
+            : "Invalid email or password"
+        );
       }
     })();
   };

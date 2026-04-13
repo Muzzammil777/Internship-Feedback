@@ -1,3 +1,5 @@
+"""User account document model for authentication and role mapping."""
+
 from __future__ import annotations
 
 from datetime import datetime
@@ -9,6 +11,8 @@ from .common import BaseDocument, PyObjectId, UserRole
 
 
 class UserDocument(BaseDocument):
+    """MongoDB document representing an authenticated user account."""
+
     email: EmailStr
     name: str = Field(min_length=2, max_length=120)
     password_hash: str = Field(min_length=60, max_length=255)

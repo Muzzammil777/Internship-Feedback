@@ -1,7 +1,9 @@
+"""Student management routes for listing and creating intern records."""
+
 import logging
-from bson import ObjectId
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
+from pymongo.errors import PyMongoError
 
 from app.core.database import get_database
 
@@ -10,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class CreateStudentRequest(BaseModel):
+    """Payload used when creating a student account from company dashboard."""
+
     name: str
     email: EmailStr
     password: str
@@ -55,12 +59,14 @@ def _serialize(doc: dict) -> dict:
 
 @router.get("")
 async def list_students() -> list[dict]:
+    """Return all students from MongoDB, or an empty list when DB is unavailable."""
+
     try:
         db = get_database()
         cursor = db["students"].find({})
         students = [_serialize(doc) async for doc in cursor]
         return students
-    except Exception as e:
+    except PyMongoError as e:
         logger.error("Failed to list students: %s", e)
         return []
 
@@ -83,6 +89,8 @@ async def get_student_profile(email: str) -> dict:
 
 @router.post("", status_code=201)
 async def create_student(payload: CreateStudentRequest) -> dict:
+    """Create a student record and a matching user login record."""
+
     db = get_database()
 
     # Prevent duplicate emails

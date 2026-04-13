@@ -1,3 +1,5 @@
+"""Dynamic feedback form template models."""
+
 from __future__ import annotations
 
 from typing import List, Optional
@@ -8,6 +10,8 @@ from .common import BaseDocument, PyObjectId, TemplateFieldType, TemplateType, e
 
 
 class TemplateField(BaseModel):
+    """Single configurable field entry for a feedback form template."""
+
     id: str = Field(min_length=1, max_length=64)
     label: str = Field(min_length=1, max_length=120)
     type: TemplateFieldType
@@ -24,6 +28,8 @@ class TemplateField(BaseModel):
 
     @model_validator(mode="after")
     def validate_numeric_bounds(self) -> "TemplateField":
+        """Ensure numeric template fields have valid min/max bounds."""
+
         is_numeric = self.type in {TemplateFieldType.SLIDER, TemplateFieldType.RATING}
         if not is_numeric:
             return self
@@ -36,6 +42,8 @@ class TemplateField(BaseModel):
 
 
 class FormTemplateDocument(BaseDocument):
+    """MongoDB document representing a versioned form template."""
+
     company_id: PyObjectId
     type: TemplateType
     fields: List[TemplateField] = Field(min_length=1, max_length=64)
@@ -45,6 +53,8 @@ class FormTemplateDocument(BaseDocument):
     @field_validator("fields")
     @classmethod
     def validate_unique_field_ids(cls, values: List[TemplateField]) -> List[TemplateField]:
+        """Ensure template field identifiers are unique within a template."""
+
         ids = [field.id for field in values]
         ensure_unique_values(ids, label="Template field ids")
         return values

@@ -1,7 +1,10 @@
+"""Authentication routes for demo and database-backed login flows."""
+
 import logging
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, EmailStr
+from pymongo.errors import PyMongoError
 
 from app.core.config import get_settings
 from app.core.database import get_database
@@ -12,18 +15,22 @@ logger = logging.getLogger(__name__)
 
 
 class LoginRequest(BaseModel):
+    """Login payload expected by the authentication endpoint."""
+
     email: EmailStr
     password: str
 
 
 @router.post("/login")
 async def login(payload: LoginRequest) -> dict[str, str]:
+    """Authenticate a user via MongoDB, with demo credential fallback."""
+
     user = None
 
     try:
         users = get_database()["users"]
         user = await users.find_one({"email": payload.email, "password": payload.password})
-    except Exception as e:
+    except PyMongoError as e:
         logger.warning("MongoDB lookup failed, falling back to demo credentials. Error: %s", e)
         user = None
 

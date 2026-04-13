@@ -2,6 +2,13 @@ import { createContext, useContext, useState, ReactNode } from "react";
 
 type UserRole = "student" | "company";
 
+type LoginError = "invalid_credentials" | "role_mismatch";
+
+interface LoginResult {
+  user: User | null;
+  error?: LoginError;
+}
+
 interface User {
   email: string;
   name: string;
@@ -10,7 +17,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<User | null>;
+  login: (email: string, password: string, selectedRole: UserRole) => Promise<LoginResult>;
   logout: () => void;
 }
 
@@ -34,7 +41,11 @@ export const DEMO_USERS = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = async (email: string, password: string): Promise<User | null> => {
+  const login = async (
+    email: string,
+    password: string,
+    selectedRole: UserRole
+  ): Promise<LoginResult> => {
     try {
       const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
       const response = await fetch(`${apiBaseUrl}/auth/login`, {
@@ -46,19 +57,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        return null;
+        return { user: null, error: "invalid_credentials" };
       }
 
       const data: { email: string; name: string; role: UserRole } = await response.json();
+      if (data.role !== selectedRole) {
+        return { user: null, error: "role_mismatch" };
+      }
+
       const loggedInUser: User = {
         email: data.email,
         name: data.name,
         role: data.role,
       };
       setUser(loggedInUser);
-      return loggedInUser;
+      return { user: loggedInUser };
     } catch {
-      return null;
+      return { user: null, error: "invalid_credentials" };
     }
   };
 
