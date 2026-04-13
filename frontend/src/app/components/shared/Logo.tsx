@@ -41,14 +41,14 @@ export default function Logo({
 
       {/* Logo Text */}
       {variant === "full" && (
-        <div className="flex flex-col">
+        <div className="flex flex-col justify-center">
           <span
-            className={`font-bold text-foreground ${dimensions.fontSize} leading-tight tracking-tight`}
+            className={`font-bold text-foreground ${dimensions.fontSize} leading-tight tracking-tight whitespace-nowrap`}
           >
-            MoviCloud
+            Internship Feedback
           </span>
-          <span className="text-xs text-muted-foreground leading-tight">
-            Internship Platform
+          <span className="text-xs text-muted-foreground leading-tight whitespace-nowrap">
+            by MoviCloud Labs
           </span>
         </div>
       )}

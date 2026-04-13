@@ -29,8 +29,8 @@ export default function StudentProfile() {
     name: "Alex Johnson",
     email: "alex.johnson@email.com",
     phone: "+1 (555) 123-4567",
-    university: "State University",
-    department: "Engineering - Frontend",
+    COLLEGE: "College name",
+    Role: "Engineering - Frontend",
     startDate: "2026-01-15",
     endDate: "2026-03-30",
   });
@@ -188,23 +188,23 @@ export default function StudentProfile() {
                     {formData.name}
                   </h2>
 
-                  {/* Department */}
+                  {/* Role */}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
                       <Building2 className="w-5 h-5 text-primary" />
                     </div>
                     <span className="text-lg font-semibold text-foreground">
-                      {formData.department}
+                      {formData.Role}
                     </span>
                   </div>
 
-                  {/* University */}
+                  {/* COLLEGE */}
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-accent/10 rounded-lg">
                       <GraduationCap className="w-5 h-5 text-accent" />
                     </div>
                     <span className="text-base text-muted-foreground font-medium">
-                      {formData.university}
+                      {formData.COLLEGE}
                     </span>
                   </div>
 
@@ -308,10 +308,10 @@ export default function StudentProfile() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">University</Label>
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">COLLEGE</Label>
                 <Input
-                  value={formData.university}
-                  onChange={(e) => setFormData({ ...formData, university: e.target.value })}
+                  value={formData.COLLEGE}
+                  onChange={(e) => setFormData({ ...formData, COLLEGE: e.target.value })}
                   className="font-medium text-base"
                 />
               </div>
@@ -337,15 +337,11 @@ export default function StudentProfile() {
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Company Name</Label>
-                <Input defaultValue="TechCorp Inc." className="font-medium text-base" />
-              </div>
-              <div className="space-y-2">
-                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Department</Label>
+              <div className="space-y-2 md:col-span-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Role</Label>
                 <Input
-                  value={formData.department}
-                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  value={formData.Role}
+                  onChange={(e) => setFormData({ ...formData, Role: e.target.value })}
                   className="font-medium text-base"
                 />
               </div>
@@ -359,21 +355,27 @@ export default function StudentProfile() {
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Start Date</Label>
-                <Input
-                  type="date"
-                  value={formData.startDate}
-                  onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                  className="font-medium text-base"
-                />
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    className="font-medium text-base pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:w-6 [&::-webkit-calendar-picker-indicator]:h-6 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">End Date</Label>
-                <Input
-                  type="date"
-                  value={formData.endDate}
-                  onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                  className="font-medium text-base"
-                />
+                <div className="relative">
+                  <Input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                    className="font-medium text-base pr-10 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:right-2 [&::-webkit-calendar-picker-indicator]:w-6 [&::-webkit-calendar-picker-indicator]:h-6 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                  <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                </div>
               </div>
             </div>
           </motion.div>
@@ -545,7 +547,7 @@ export default function StudentProfile() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.6 }}
-            className="flex justify-end sticky bottom-8"
+            className="flex justify-end pt-4 pb-12"
           >
             <Button size="lg" className="flex items-center gap-2 shadow-lg">
               <Save className="w-4 h-4" />

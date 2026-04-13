@@ -226,7 +226,7 @@ export default function RootLayout() {
       {/* Desktop Sidebar */}
       <motion.aside
         initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1, width: isCollapsed ? 80 : 256 }}
+        animate={{ x: 0, opacity: 1, width: isCollapsed ? 80 : 280 }}
         transition={{ duration: 0.3 }}
         className="hidden md:flex bg-card border-r border-border flex-col shadow-lg relative"
       >

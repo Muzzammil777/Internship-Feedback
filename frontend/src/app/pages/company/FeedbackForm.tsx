@@ -21,8 +21,8 @@ import {
 interface Student {
   id: string;
   name: string;
-  department: string;
-  university: string;
+  Role: string;
+  COLLEGE: string;
   projectTitle: string;
   duration: string;
   startDate: string;
@@ -55,8 +55,8 @@ export default function CompanyFeedbackForm() {
     {
       id: "1",
       name: "Alex Johnson",
-      department: "Engineering - Frontend",
-      university: "State University",
+      Role: "Engineering - Frontend",
+      COLLEGE: "College name",
       projectTitle: "E-Commerce Platform Redesign",
       duration: "12 weeks",
       startDate: "January 15, 2026",
@@ -65,8 +65,8 @@ export default function CompanyFeedbackForm() {
     {
       id: "2",
       name: "Emma Chen",
-      department: "Engineering - Backend",
-      university: "Tech Institute",
+      Role: "Engineering - Backend",
+      COLLEGE: "Tech Institute",
       projectTitle: "API Gateway Migration",
       duration: "10 weeks",
       startDate: "February 1, 2026",
@@ -75,8 +75,8 @@ export default function CompanyFeedbackForm() {
     {
       id: "3",
       name: "Marcus Williams",
-      department: "Data Science",
-      university: "Engineering College",
+      Role: "Data Science",
+      COLLEGE: "Engineering College",
       projectTitle: "Customer Analytics Dashboard",
       duration: "11 weeks",
       startDate: "January 20, 2026",
@@ -85,8 +85,8 @@ export default function CompanyFeedbackForm() {
     {
       id: "4",
       name: "Sophia Martinez",
-      department: "Product Design",
-      university: "Design University",
+      Role: "Product Design",
+      COLLEGE: "Design COLLEGE",
       projectTitle: "Mobile App Redesign",
       duration: "12 weeks",
       startDate: "February 10, 2026",
@@ -293,7 +293,7 @@ export default function CompanyFeedbackForm() {
                           isSelected ? "text-white/80" : "text-muted-foreground"
                         }`}
                       >
-                        {student.department}
+                        {student.Role}
                       </p>
                     </div>
                     <div className="flex-shrink-0">
@@ -418,7 +418,7 @@ export default function CompanyFeedbackForm() {
                         <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
                           <Building2 className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-foreground">
-                            {selectedStudent.department}
+                            {selectedStudent.Role}
                           </span>
                         </div>
                       </div>

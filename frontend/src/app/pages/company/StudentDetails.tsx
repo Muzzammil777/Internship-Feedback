@@ -35,8 +35,8 @@ interface Student {
   name: string;
   email: string;
   phone: string;
-  university: string;
-  department: string;
+  COLLEGE: string;
+  Role: string;
   supervisor: string;
   supervisorEmail: string;
   startDate: string;
@@ -58,8 +58,8 @@ export default function CompanyStudentDetails() {
     name: "",
     email: "",
     password: "",
-    department: "",
-    university: "",
+    Role: "",
+    COLLEGE: "",
   });
 
   const students: Student[] = [
@@ -68,8 +68,8 @@ export default function CompanyStudentDetails() {
       name: "Alex Johnson",
       email: "alex.johnson@email.com",
       phone: "+1 (555) 123-4567",
-      university: "State University",
-      department: "Engineering - Frontend",
+      COLLEGE: "College name",
+      Role: "Engineering - Frontend",
       supervisor: "Sarah Mitchell",
       supervisorEmail: "sarah.mitchell@techcorp.com",
       startDate: "January 15, 2026",
@@ -100,8 +100,8 @@ export default function CompanyStudentDetails() {
       name: "Emma Chen",
       email: "emma.chen@email.com",
       phone: "+1 (555) 234-5678",
-      university: "Tech Institute",
-      department: "Engineering - Backend",
+      COLLEGE: "Tech Institute",
+      Role: "Engineering - Backend",
       supervisor: "Michael Brown",
       supervisorEmail: "michael.brown@techcorp.com",
       startDate: "February 1, 2026",
@@ -127,8 +127,8 @@ export default function CompanyStudentDetails() {
       name: "Marcus Williams",
       email: "marcus.williams@email.com",
       phone: "+1 (555) 345-6789",
-      university: "Engineering College",
-      department: "Data Science",
+      COLLEGE: "Engineering College",
+      Role: "Data Science",
       supervisor: "Lisa Anderson",
       supervisorEmail: "lisa.anderson@techcorp.com",
       startDate: "January 20, 2026",
@@ -154,8 +154,8 @@ export default function CompanyStudentDetails() {
       name: "Sophia Martinez",
       email: "sophia.martinez@email.com",
       phone: "+1 (555) 456-7890",
-      university: "Design University",
-      department: "Product Design",
+      COLLEGE: "Design COLLEGE",
+      Role: "Product Design",
       supervisor: "David Kim",
       supervisorEmail: "david.kim@techcorp.com",
       startDate: "February 10, 2026",
@@ -181,8 +181,8 @@ export default function CompanyStudentDetails() {
   const filteredStudents = students.filter(
     (student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.department.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.university.toLowerCase().includes(searchQuery.toLowerCase())
+      student.Role.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.COLLEGE.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const statusColors = {
@@ -212,8 +212,8 @@ export default function CompanyStudentDetails() {
         name: "",
         email: "",
         password: "",
-        department: "",
-        university: "",
+        Role: "",
+        COLLEGE: "",
       });
     }, 1500);
   };
@@ -225,8 +225,8 @@ export default function CompanyStudentDetails() {
       name: "",
       email: "",
       password: "",
-      department: "",
-      university: "",
+      Role: "",
+      COLLEGE: "",
     });
   };
 
@@ -320,7 +320,7 @@ export default function CompanyStudentDetails() {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Search by name, department, or university..."
+                placeholder="Search by name, Role, or COLLEGE..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-14 text-base shadow-md"
@@ -387,13 +387,13 @@ export default function CompanyStudentDetails() {
                           </span>
                         </div>
 
-                        {/* Department & University */}
+                        {/* Role & COLLEGE */}
                         <div className="mb-3">
                           <p className="text-sm font-semibold text-foreground mb-1">
-                            {student.department}
+                            {student.Role}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            {student.university}
+                            {student.COLLEGE}
                           </p>
                         </div>
 
@@ -578,20 +578,20 @@ export default function CompanyStudentDetails() {
                         </p>
                       </div>
 
-                      {/* Department */}
+                      {/* Role */}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-foreground">
-                          Department
+                          Role
                           <span className="text-xs text-muted-foreground font-normal ml-1">
                             (Optional)
                           </span>
                         </Label>
                         <Input
-                          value={newStudentForm.department}
+                          value={newStudentForm.Role}
                           onChange={(e) =>
                             setNewStudentForm({
                               ...newStudentForm,
-                              department: e.target.value,
+                              Role: e.target.value,
                             })
                           }
                           placeholder="e.g., Engineering - Frontend"
@@ -600,23 +600,23 @@ export default function CompanyStudentDetails() {
                         />
                       </div>
 
-                      {/* University */}
+                      {/* COLLEGE */}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-foreground">
-                          University
+                          COLLEGE
                           <span className="text-xs text-muted-foreground font-normal ml-1">
                             (Optional)
                           </span>
                         </Label>
                         <Input
-                          value={newStudentForm.university}
+                          value={newStudentForm.COLLEGE}
                           onChange={(e) =>
                             setNewStudentForm({
                               ...newStudentForm,
-                              university: e.target.value,
+                              COLLEGE: e.target.value,
                             })
                           }
-                          placeholder="e.g., State University"
+                          placeholder="e.g., College name"
                           className="text-base"
                           disabled={isSubmitting}
                         />
@@ -733,23 +733,23 @@ export default function CompanyStudentDetails() {
                     {selectedStudent.name}
                   </h1>
 
-                  {/* Department */}
+                  {/* Role */}
                   <div className="flex items-center gap-3 mb-3">
                     <div className="p-2 bg-primary/10 rounded-lg">
                       <Building2 className="w-5 h-5 text-primary" />
                     </div>
                     <span className="text-lg font-semibold text-foreground">
-                      {selectedStudent.department}
+                      {selectedStudent.Role}
                     </span>
                   </div>
 
-                  {/* University */}
+                  {/* COLLEGE */}
                   <div className="flex items-center gap-3 mb-6">
                     <div className="p-2 bg-accent/10 rounded-lg">
                       <GraduationCap className="w-5 h-5 text-accent" />
                     </div>
                     <span className="text-base text-muted-foreground font-medium">
-                      {selectedStudent.university}
+                      {selectedStudent.COLLEGE}
                     </span>
                   </div>
 
@@ -846,10 +846,10 @@ export default function CompanyStudentDetails() {
                 </div>
                 <div className="space-y-2">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                    University
+                    COLLEGE
                   </span>
                   <div className="text-base font-semibold text-foreground">
-                    {selectedStudent.university}
+                    {selectedStudent.COLLEGE}
                   </div>
                 </div>
               </div>
@@ -871,10 +871,10 @@ export default function CompanyStudentDetails() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                    Department
+                    Role
                   </span>
                   <div className="text-base font-semibold text-foreground">
-                    {selectedStudent.department}
+                    {selectedStudent.Role}
                   </div>
                 </div>
                 <div className="space-y-2">
