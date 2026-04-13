@@ -1,3 +1,5 @@
+"""MongoDB index definitions and bootstrap utility."""
+
 from __future__ import annotations
 
 from pymongo import ASCENDING, DESCENDING, TEXT, IndexModel
@@ -8,12 +10,24 @@ USERS_INDEXES = [
     IndexModel([("email", ASCENDING)], unique=True, name="uq_users_email"),
     IndexModel([("student_id", ASCENDING)], unique=True, sparse=True, name="uq_users_student_id"),
     IndexModel(
-        [("company_id", ASCENDING), ("role", ASCENDING), ("is_active", ASCENDING), ("_id", ASCENDING)],
+        [
+            ("company_id", ASCENDING),
+            ("role", ASCENDING),
+            ("is_active", ASCENDING),
+            ("_id", ASCENDING),
+        ],
         name="ix_users_company_role_active_cursor",
     ),
-    IndexModel([("role", ASCENDING), ("is_active", ASCENDING), ("_id", ASCENDING)], name="ix_users_role_active_cursor"),
+    IndexModel(
+        [("role", ASCENDING), ("is_active", ASCENDING), ("_id", ASCENDING)],
+        name="ix_users_role_active_cursor",
+    ),
     IndexModel([("name", ASCENDING)], name="ix_users_name"),
-    IndexModel([("name", TEXT), ("email", TEXT)], name="ix_users_text_name_email", default_language="none"),
+    IndexModel(
+        [("name", TEXT), ("email", TEXT)],
+        name="ix_users_text_name_email",
+        default_language="none",
+    ),
 ]
 
 COMPANIES_INDEXES = [
@@ -32,7 +46,11 @@ STUDENTS_INDEXES = [
         name="ix_students_company_status_cursor",
     ),
     IndexModel(
-        [("current_internship.company_id", ASCENDING), ("current_internship.role_title", ASCENDING), ("_id", ASCENDING)],
+        [
+            ("current_internship.company_id", ASCENDING),
+            ("current_internship.role_title", ASCENDING),
+            ("_id", ASCENDING),
+        ],
         name="ix_students_company_role_cursor",
     ),
     IndexModel(
@@ -70,7 +88,11 @@ FEEDBACK_INDEXES = [
         name="ix_feedback_company_type_latest_submitted",
     ),
     IndexModel(
-        [("submitted_by_user_id", ASCENDING), ("submitted_at", DESCENDING), ("_id", DESCENDING)],
+        [
+            ("submitted_by_user_id", ASCENDING),
+            ("submitted_at", DESCENDING),
+            ("_id", DESCENDING),
+        ],
         name="ix_feedback_author_submitted",
     ),
     IndexModel(
@@ -141,5 +163,6 @@ COLLECTION_INDEXES = {
 
 
 def create_indexes(db: Database) -> None:
+    """Create all predefined collection indexes if they are missing."""
     for collection_name, indexes in COLLECTION_INDEXES.items():
         db[collection_name].create_indexes(indexes)
