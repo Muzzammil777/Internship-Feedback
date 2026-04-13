@@ -10,7 +10,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
+  login: (email: string, password: string) => Promise<User | null>;
   logout: () => void;
 }
 
@@ -34,34 +34,32 @@ export const DEMO_USERS = {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (email: string, password: string): boolean => {
-    // Check student credentials
-    if (
-      email === DEMO_USERS.student.email &&
-      password === DEMO_USERS.student.password
-    ) {
-      setUser({
-        email: DEMO_USERS.student.email,
-        name: DEMO_USERS.student.name,
-        role: DEMO_USERS.student.role,
+  const login = async (email: string, password: string): Promise<User | null> => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+      const response = await fetch(`${apiBaseUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
       });
-      return true;
-    }
 
-    // Check company credentials
-    if (
-      email === DEMO_USERS.company.email &&
-      password === DEMO_USERS.company.password
-    ) {
-      setUser({
-        email: DEMO_USERS.company.email,
-        name: DEMO_USERS.company.name,
-        role: DEMO_USERS.company.role,
-      });
-      return true;
-    }
+      if (!response.ok) {
+        return null;
+      }
 
-    return false;
+      const data: { email: string; name: string; role: UserRole } = await response.json();
+      const loggedInUser: User = {
+        email: data.email,
+        name: data.name,
+        role: data.role,
+      };
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch {
+      return null;
+    }
   };
 
   const logout = () => {

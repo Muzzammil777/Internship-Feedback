@@ -1,13 +1,16 @@
 import { motion } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import RatingBar from "../../components/shared/RatingBar";
 import StarRating from "../../components/shared/StarRating";
 import { Button } from "../../components/ui/button";
 import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import { Building2, MessageSquare, TrendingUp, Award, CheckCircle2, Send, Star, Users, Coffee, Lightbulb, GraduationCap } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
 export default function StudentFeedback() {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"company" | "student">("company");
 
   const [studentFeedback, setStudentFeedback] = useState({
@@ -21,6 +24,42 @@ export default function StudentFeedback() {
   });
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadSavedFeedback = async () => {
+      if (!user?.email) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
+        if (!response.ok) {
+          return;
+        }
+
+        const records = await response.json();
+        if (records.length > 0) {
+          const latest = records[0];
+          setStudentFeedback({
+            learningExperience: latest.learningExperience,
+            mentorship: latest.mentorship,
+            workEnvironment: latest.workEnvironment,
+            communication: latest.communication,
+            strengths: latest.strengths,
+            improvements: latest.improvements,
+            overallComments: latest.overallComments,
+          });
+          setIsSubmitted(true);
+        }
+      } catch {
+        setError("Unable to load your saved feedback.");
+      }
+    };
+
+    void loadSavedFeedback();
+  }, [apiBaseUrl, user?.email]);
 
   const handleRatingChange = (category: string, value: number) => {
     setStudentFeedback({ ...studentFeedback, [category]: value });
@@ -28,8 +67,41 @@ export default function StudentFeedback() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitted(true);
-    // Here you would typically send the feedback to your backend
+    void (async () => {
+      setIsSaving(true);
+      setError("");
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/feedback/student`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            studentEmail: user?.email ?? "student@example.com",
+            studentName: user?.name ?? "Alex Johnson",
+            companyName: "TechCorp Inc.",
+            learningExperience: studentFeedback.learningExperience,
+            mentorship: studentFeedback.mentorship,
+            workEnvironment: studentFeedback.workEnvironment,
+            communication: studentFeedback.communication,
+            strengths: studentFeedback.strengths,
+            improvements: studentFeedback.improvements,
+            overallComments: studentFeedback.overallComments,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save student feedback");
+        }
+
+        setIsSubmitted(true);
+      } catch {
+        setError("Could not save your feedback right now.");
+      } finally {
+        setIsSaving(false);
+      }
+    })();
   };
 
   return (
@@ -454,10 +526,17 @@ export default function StudentFeedback() {
                   type="submit"
                   size="lg"
                   className="flex items-center gap-2 shadow-lg"
+                  disabled={isSaving}
                 >
                   <Send className="w-4 h-4" />
-                  Submit Feedback
+                  {isSaving ? "Saving..." : "Submit Feedback"}
                 </Button>
+              </div>
+            )}
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+                {error}
               </div>
             )}
 
