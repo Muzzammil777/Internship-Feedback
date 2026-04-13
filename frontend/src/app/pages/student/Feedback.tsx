@@ -8,10 +8,37 @@ import { Label } from "../../components/ui/label";
 import { Building2, MessageSquare, TrendingUp, Award, CheckCircle2, Send, Star, Users, Coffee, Lightbulb, GraduationCap } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 
+interface StudentProfile {
+  id: string;
+  company_name?: string;
+  companyName?: string;
+  supervisor?: string;
+}
+
+interface CompanyFeedback {
+  overallRating: number;
+  ratings: {
+    technical: number;
+    quality: number;
+    communication: number;
+    teamwork: number;
+    problemSolving: number;
+    initiative: number;
+    professionalism: number;
+    learning: number;
+  };
+  strengths: string;
+  improvements: string;
+  comments: string;
+  recommendation: string;
+}
+
 export default function StudentFeedback() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<"company" | "student">("company");
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
 
   const [studentFeedback, setStudentFeedback] = useState({
     learningExperience: 0,
@@ -28,37 +55,50 @@ export default function StudentFeedback() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadSavedFeedback = async () => {
-      if (!user?.email) {
-        return;
-      }
+    const loadData = async () => {
+      if (!user?.email) return;
 
       try {
-        const response = await fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
-        if (!response.ok) {
-          return;
+        // Fetch Profile for names/companies
+        const profileRes = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
+        if (profileRes.ok) {
+          const profileData = (await profileRes.json()) as StudentProfile;
+          setProfile(profileData);
+
+          if (profileData.id) {
+            const companyFeedbackRes = await fetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(profileData.id)}`);
+            if (companyFeedbackRes.ok) {
+              const records = (await companyFeedbackRes.json()) as CompanyFeedback[];
+              setCompanyFeedback(records[0] ?? null);
+            }
+          }
         }
 
-        const records = await response.json();
-        if (records.length > 0) {
-          const latest = records[0];
-          setStudentFeedback({
-            learningExperience: latest.learningExperience,
-            mentorship: latest.mentorship,
-            workEnvironment: latest.workEnvironment,
-            communication: latest.communication,
-            strengths: latest.strengths,
-            improvements: latest.improvements,
-            overallComments: latest.overallComments,
-          });
-          setIsSubmitted(true);
+        // Fetch existing feedback
+        const response = await fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
+        if (response.ok) {
+          const records = await response.json();
+          if (records.length > 0) {
+            const latest = records[0];
+            setStudentFeedback({
+              learningExperience: latest.learningExperience,
+              mentorship: latest.mentorship,
+              workEnvironment: latest.workEnvironment,
+              communication: latest.communication,
+              strengths: latest.strengths,
+              improvements: latest.improvements,
+              overallComments: latest.overallComments,
+            });
+            setIsSubmitted(true);
+          }
         }
-      } catch {
-        setError("Unable to load your saved feedback.");
+      } catch (err) {
+        console.error("Failed to load data", err);
+        setError("Unable to load feedback data.");
       }
     };
 
-    void loadSavedFeedback();
+    void loadData();
   }, [apiBaseUrl, user?.email]);
 
   const handleRatingChange = (category: string, value: number) => {
@@ -78,9 +118,9 @@ export default function StudentFeedback() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            studentEmail: user?.email ?? "student@example.com",
-            studentName: user?.name ?? "Alex Johnson",
-            companyName: "TechCorp Inc.",
+            studentEmail: user?.email ?? "",
+            studentName: user?.name ?? "Student",
+            companyName: profile?.company_name || profile?.companyName || "Organization",
             learningExperience: studentFeedback.learningExperience,
             mentorship: studentFeedback.mentorship,
             workEnvironment: studentFeedback.workEnvironment,
@@ -186,7 +226,7 @@ export default function StudentFeedback() {
                 <h2 className="text-2xl font-bold text-foreground">
                   Company Evaluation
                 </h2>
-                <p className="text-sm text-muted-foreground mt-1">TechCorp Inc.</p>
+                <p className="text-sm text-muted-foreground mt-1">{profile?.company_name || profile?.companyName || "Organization"}</p>
               </div>
             </div>
             <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-blue-200">
@@ -203,16 +243,18 @@ export default function StudentFeedback() {
                     Overall Performance
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Evaluated by Sarah Mitchell, Engineering Manager
+                    Evaluated by {profile?.supervisor || "Supervisor"}
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <StarRating value={5} readonly size="lg" />
+                  <StarRating value={companyFeedback?.overallRating ?? 0} readonly size="lg" />
                   <div className="text-center">
                     <div className="text-4xl font-bold bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
-                      5.0
+                      {(companyFeedback?.overallRating ?? 0).toFixed(1)}
                     </div>
-                    <p className="text-xs text-muted-foreground font-medium">Outstanding</p>
+                    <p className="text-xs text-muted-foreground font-medium">
+                      {companyFeedback ? "From company evaluation" : "No rating yet"}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -223,14 +265,14 @@ export default function StudentFeedback() {
           <div className="mb-10">
             <h3 className="text-lg font-bold text-foreground mb-6">Performance Metrics</h3>
             <div className="space-y-5">
-              <RatingBar label="Technical Skills" value={5} color="primary" />
-              <RatingBar label="Work Quality" value={5} color="primary" />
-              <RatingBar label="Communication" value={4} color="accent" />
-              <RatingBar label="Teamwork" value={5} color="primary" />
-              <RatingBar label="Problem Solving" value={5} color="primary" />
-              <RatingBar label="Initiative" value={4} color="accent" />
-              <RatingBar label="Professionalism" value={5} color="primary" />
-              <RatingBar label="Learning Ability" value={5} color="success" />
+              <RatingBar label="Technical Skills" value={companyFeedback?.ratings.technical ?? 0} color="primary" />
+              <RatingBar label="Work Quality" value={companyFeedback?.ratings.quality ?? 0} color="primary" />
+              <RatingBar label="Communication" value={companyFeedback?.ratings.communication ?? 0} color="accent" />
+              <RatingBar label="Teamwork" value={companyFeedback?.ratings.teamwork ?? 0} color="primary" />
+              <RatingBar label="Problem Solving" value={companyFeedback?.ratings.problemSolving ?? 0} color="primary" />
+              <RatingBar label="Initiative" value={companyFeedback?.ratings.initiative ?? 0} color="accent" />
+              <RatingBar label="Professionalism" value={companyFeedback?.ratings.professionalism ?? 0} color="primary" />
+              <RatingBar label="Learning Ability" value={companyFeedback?.ratings.learning ?? 0} color="success" />
             </div>
           </div>
 
@@ -248,13 +290,8 @@ export default function StudentFeedback() {
                 </div>
                 <h3 className="text-lg font-bold text-foreground">Strengths</h3>
               </div>
-              <p className="text-foreground leading-relaxed">
-                Alex demonstrated exceptional technical skills throughout the
-                internship. Their ability to quickly learn new technologies and
-                apply them effectively was impressive. The quality of code produced
-                was consistently high, following best practices and maintaining
-                excellent documentation. Alex also showed strong problem-solving
-                abilities and took initiative on several key features.
+              <p className="text-foreground leading-relaxed italic">
+                {companyFeedback?.strengths || "No evaluation strengths have been recorded by the company yet."}
               </p>
             </motion.div>
 
@@ -270,11 +307,8 @@ export default function StudentFeedback() {
                   Areas for Growth
                 </h3>
               </div>
-              <p className="text-foreground leading-relaxed">
-                While Alex's technical abilities are strong, there's room for
-                improvement in cross-team communication. Participating more
-                actively in team meetings and being more proactive in asking
-                questions would benefit future professional development.
+              <p className="text-foreground leading-relaxed italic">
+                {companyFeedback?.improvements || "No growth areas have been recorded yet."}
               </p>
             </motion.div>
 
@@ -290,12 +324,8 @@ export default function StudentFeedback() {
                   Overall Comments
                 </h3>
               </div>
-              <p className="text-foreground leading-relaxed">
-                Alex has been an outstanding intern and a valuable member of our
-                team. We would highly recommend them for future opportunities and
-                would welcome them back for a full-time position. Their
-                contributions to the e-commerce platform redesign were significant,
-                and they consistently exceeded expectations.
+              <p className="text-foreground leading-relaxed italic">
+                {companyFeedback?.comments || "Awaiting overall comments from your supervisor."}
               </p>
             </motion.div>
           </div>
@@ -314,7 +344,7 @@ export default function StudentFeedback() {
                 </div>
                 <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/50">
                   <CheckCircle2 className="w-5 h-5" />
-                  Highly Recommended
+                  {companyFeedback?.recommendation || "Awaiting recommendation"}
                 </div>
               </div>
             </div>
@@ -342,7 +372,7 @@ export default function StudentFeedback() {
                   Your Feedback About Company
                 </h2>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Share your internship experience at TechCorp Inc.
+                  Share your internship experience at {profile?.company_name || profile?.companyName || "your organization"}
                 </p>
               </div>
             </div>

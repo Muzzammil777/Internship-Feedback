@@ -278,7 +278,7 @@ export default function CompanyStudentDetails() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ duration: 0.3, delay: index * 0.05 }}
-                    whileHover={{ y: -2, shadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                    whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
                     onClick={() => setSelectedStudent(student)}
                     className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                   >
@@ -715,7 +715,7 @@ export default function CompanyStudentDetails() {
                           Tasks
                         </div>
                         <div className="text-base font-bold text-foreground">
-                          {selectedStudent.tasks.length}
+                          {selectedStudent.tasks?.length ?? 0}
                         </div>
                       </div>
                     </div>
@@ -729,7 +729,7 @@ export default function CompanyStudentDetails() {
                           Skills
                         </div>
                         <div className="text-base font-bold text-foreground">
-                          {selectedStudent.skills.length}
+                          {selectedStudent.skills?.length ?? 0}
                         </div>
                       </div>
                     </div>
@@ -843,7 +843,7 @@ export default function CompanyStudentDetails() {
                     Internship Period
                   </span>
                   <div className="text-base font-semibold text-foreground">
-                    {selectedStudent.startDate} - {selectedStudent.endDate}
+                    {selectedStudent.startDate || "Not set"} - {selectedStudent.endDate || "Not set"}
                   </div>
                 </div>
               </div>

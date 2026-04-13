@@ -17,9 +17,39 @@ class CreateStudentRequest(BaseModel):
     college: str = ""
 
 
+class TaskPayload(BaseModel):
+    id: str
+    title: str
+    description: str
+
+
+class UpdateStudentProfileRequest(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str = ""
+    role_title: str = ""
+    college: str = ""
+    startDate: str = ""
+    endDate: str = ""
+    duration: str = ""
+    supervisor: str = ""
+    supervisorEmail: str = ""
+    skills: list[str] = []
+    tasks: list[TaskPayload] = []
+
+
 def _serialize(doc: dict) -> dict:
-    """Convert MongoDB _id ObjectId to string so it can be JSON-serialised."""
+    """Convert MongoDB _id ObjectId to string and ensure default fields exist."""
     doc["id"] = str(doc.pop("_id"))
+    # Ensure UI-expected fields exist
+    doc.setdefault("tasks", [])
+    doc.setdefault("skills", [])
+    doc.setdefault("role_title", "")
+    doc.setdefault("college", "")
+    doc.setdefault("status", "pending")
+    # Mapping backend role_title to frontend Role and college to COLLEGE for consistency
+    doc["Role"] = doc.get("role_title", "")
+    doc["COLLEGE"] = doc.get("college", "")
     return doc
 
 
@@ -33,6 +63,22 @@ async def list_students() -> list[dict]:
     except Exception as e:
         logger.error("Failed to list students: %s", e)
         return []
+
+
+@router.get("/profile/{email}")
+async def get_student_profile(email: str) -> dict:
+    try:
+        db = get_database()
+        student = await db["students"].find_one({"email": email})
+        if not student:
+            raise HTTPException(status_code=404, detail="Student profile not found")
+        return _serialize(student)
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        logger.error("Failed to fetch student profile: %s", e)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
 
 
 @router.post("", status_code=201)
@@ -56,6 +102,15 @@ async def create_student(payload: CreateStudentRequest) -> dict:
         "role_title": payload.role_title,
         "college": payload.college,
         "status": "pending",
+        "tasks": [],
+        "skills": [],
+        "company_name": "",
+        "phone": "",
+        "supervisor": "",
+        "supervisorEmail": "",
+        "startDate": "",
+        "endDate": "",
+        "duration": "",
     }
 
     # Insert into students collection
@@ -71,3 +126,48 @@ async def create_student(payload: CreateStudentRequest) -> dict:
 
     created = await db["students"].find_one({"_id": result.inserted_id})
     return _serialize(created)
+
+
+@router.put("/profile/{email}")
+async def update_student_profile(email: str, payload: UpdateStudentProfileRequest) -> dict:
+    db = get_database()
+
+    existing = await db["students"].find_one({"email": email})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+
+    if payload.email != email:
+        duplicate = await db["students"].find_one({"email": payload.email})
+        if duplicate and str(duplicate.get("_id")) != str(existing.get("_id")):
+            raise HTTPException(status_code=409, detail="A student with this email already exists.")
+
+    updated_doc = {
+        "name": payload.name,
+        "email": payload.email,
+        "phone": payload.phone,
+        "role_title": payload.role_title,
+        "college": payload.college,
+        "startDate": payload.startDate,
+        "endDate": payload.endDate,
+        "duration": payload.duration,
+        "supervisor": payload.supervisor,
+        "supervisorEmail": payload.supervisorEmail,
+        "skills": payload.skills,
+        "tasks": [task.model_dump() for task in payload.tasks],
+    }
+
+    await db["students"].update_one({"_id": existing["_id"]}, {"$set": updated_doc})
+
+    if payload.email != email:
+        await db["users"].update_one(
+            {"email": email, "role": "student"},
+            {"$set": {"email": payload.email, "name": payload.name}},
+        )
+    else:
+        await db["users"].update_one(
+            {"email": email, "role": "student"},
+            {"$set": {"name": payload.name}},
+        )
+
+    updated = await db["students"].find_one({"_id": existing["_id"]})
+    return _serialize(updated)

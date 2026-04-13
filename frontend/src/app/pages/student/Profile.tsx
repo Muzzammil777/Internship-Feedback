@@ -1,11 +1,12 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import SkillTag from "../../components/shared/SkillTag";
-import { Plus, Save, User, Building2, Briefcase, Code, ListChecks, Upload, Camera, GraduationCap, Calendar, CheckCircle2, Trash2, X } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
+import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X } from "lucide-react";
 
 interface Task {
   id: string;
@@ -14,44 +15,62 @@ interface Task {
 }
 
 export default function StudentProfile() {
-  const [skills, setSkills] = useState([
-    "React",
-    "TypeScript",
-    "Node.js",
-    "PostgreSQL",
-    "AWS",
-  ]);
+  const { user } = useAuth();
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
+  const [saveError, setSaveError] = useState("");
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
-    name: "Alex Johnson",
-    email: "alex.johnson@email.com",
-    phone: "+1 (555) 123-4567",
-    COLLEGE: "College name",
-    Role: "Engineering - Frontend",
-    startDate: "2026-01-15",
-    endDate: "2026-03-30",
+    name: "",
+    email: "",
+    phone: "",
+    COLLEGE: "",
+    Role: "",
+    startDate: "",
+    endDate: "",
+    supervisor: "",
+    supervisorEmail: "",
   });
 
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "E-Commerce Platform Redesign",
-      description: "Led the frontend development for a complete redesign of the company's e-commerce platform. Implemented modern React patterns, optimized performance, and created a responsive, accessible interface.",
-    },
-    {
-      id: "2",
-      title: "Performance Optimization",
-      description: "Optimized application performance, reducing load times by 40% through code splitting, lazy loading, and efficient state management.",
-    },
-    {
-      id: "3",
-      title: "Component Library Development",
-      description: "Built a reusable component library with comprehensive documentation, improving development efficiency across teams.",
-    },
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user?.email) return;
+      
+      try {
+        const res = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
+        if (res.ok) {
+          const data = await res.json();
+          setFormData({
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            COLLEGE: data.COLLEGE || "",
+            Role: data.Role || "",
+            startDate: data.startDate || "",
+            endDate: data.endDate || "",
+            supervisor: data.supervisor || "",
+            supervisorEmail: data.supervisorEmail || "",
+          });
+          setSkills(data.skills || []);
+          setTasks(data.tasks || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, [apiBaseUrl, user?.email]);
 
   const addSkill = () => {
     if (newSkill.trim() && !skills.includes(newSkill.trim())) {
@@ -76,8 +95,10 @@ export default function StudentProfile() {
   };
 
   const calculateDuration = () => {
+    if (!formData.startDate || !formData.endDate) return "N/A";
     const start = new Date(formData.startDate);
     const end = new Date(formData.endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "N/A";
     const weeks = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7));
     return `${weeks} weeks`;
   };
@@ -98,6 +119,63 @@ export default function StudentProfile() {
   const removeTask = (id: string) => {
     setTasks(tasks.filter((task) => task.id !== id));
   };
+
+  const handleSave = async () => {
+    if (!user?.email) {
+      return;
+    }
+
+    setIsSaving(true);
+    setSaveError("");
+    setSaveMessage("");
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          role_title: formData.Role,
+          college: formData.COLLEGE,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          duration: calculateDuration(),
+          supervisor: formData.supervisor,
+          supervisorEmail: formData.supervisorEmail,
+          skills,
+          tasks,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorPayload = (await response.json()) as { detail?: string };
+        throw new Error(errorPayload.detail ?? "Failed to save profile");
+      }
+
+      setSaveMessage("Profile saved successfully.");
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Unable to save profile right now.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
+
 
   return (
     <div className="min-h-full bg-background">
@@ -347,11 +425,20 @@ export default function StudentProfile() {
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Supervisor Name</Label>
-                <Input defaultValue="Sarah Mitchell" className="font-medium text-base" />
+                <Input
+                  value={formData.supervisor}
+                  onChange={(e) => setFormData({ ...formData, supervisor: e.target.value })}
+                  className="font-medium text-base"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Supervisor Email</Label>
-                <Input type="email" defaultValue="sarah.mitchell@techcorp.com" className="font-medium text-base" />
+                <Input
+                  type="email"
+                  value={formData.supervisorEmail}
+                  onChange={(e) => setFormData({ ...formData, supervisorEmail: e.target.value })}
+                  className="font-medium text-base"
+                />
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Start Date</Label>
@@ -549,11 +636,29 @@ export default function StudentProfile() {
             transition={{ duration: 0.4, delay: 0.6 }}
             className="flex justify-end pt-4 pb-12"
           >
-            <Button size="lg" className="flex items-center gap-2 shadow-lg">
+            <Button
+              size="lg"
+              className="flex items-center gap-2 shadow-lg"
+              onClick={handleSave}
+              type="button"
+              disabled={isSaving}
+            >
               <Save className="w-4 h-4" />
-              Save Changes
+              {isSaving ? "Saving..." : "Save Changes"}
             </Button>
           </motion.div>
+
+          {saveError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 -mt-6 mb-6">
+              {saveError}
+            </div>
+          )}
+
+          {saveMessage && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 -mt-6 mb-6">
+              {saveMessage}
+            </div>
+          )}
         </form>
       </div>
     </div>
