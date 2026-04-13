@@ -215,14 +215,71 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```json
 {
   "_id": "ObjectId",
-  "name": "Alex Johnson",
   "email": "alex@example.com",
-  "password_hash": "...",
+  "name": "Alex Johnson",
+  "password_hash": "<bcrypt_hash>",
   "role": "student | company",
-  "university": "State University",
-  "department": "Engineering - Frontend",
+  "company_id": "ObjectId | null",
+  "student_id": "ObjectId | null",
+  "is_active": true,
+  "last_login_at": "ISODate | null",
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
+}
+```
+
+### `companies` collection
+```json
+{
+  "_id": "ObjectId",
+  "name": "TechCorp Inc.",
+  "contact_email": "admin@techcorp.com",
+  "admin_user_ids": ["ObjectId"],
+  "is_active": true,
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
+}
+```
+
+### `students` collection
+```json
+{
+  "_id": "ObjectId",
+  "user_id": "ObjectId",
+  "phone": "+1 (555) 123-4567",
+  "college": "College name",
   "skills": ["React", "TypeScript"],
-  "created_at": "ISODate"
+  "tasks": [
+    {
+      "id": "ObjectId",
+      "title": "E-Commerce Platform Redesign",
+      "description": "..."
+    }
+  ],
+  "current_internship": {
+    "company_id": "ObjectId",
+    "role_title": "Engineering - Frontend",
+    "supervisor_name": "Sarah Mitchell",
+    "supervisor_email": "sarah.mitchell@techcorp.com",
+    "start_date": "YYYY-MM-DD",
+    "end_date": "YYYY-MM-DD",
+    "status": "active | completed | pending",
+    "project_title": "E-Commerce Platform Redesign"
+  },
+  "internship_history": [
+    {
+      "company_id": "ObjectId",
+      "role_title": "Engineering Intern",
+      "supervisor_name": "Manager Name",
+      "supervisor_email": "manager@company.com",
+      "start_date": "YYYY-MM-DD",
+      "end_date": "YYYY-MM-DD",
+      "status": "completed",
+      "project_title": "Project Name"
+    }
+  ],
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
 }
 ```
 
@@ -230,21 +287,28 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```json
 {
   "_id": "ObjectId",
+  "feedback_type": "company_to_student | student_to_company",
   "student_id": "ObjectId",
   "company_id": "ObjectId",
-  "type": "company_to_student | student_to_company",
+  "submitted_by_user_id": "ObjectId",
+  "internship_key": "2026-01-15_2026-03-30",
+  "template_id": "ObjectId | null",
   "ratings": {
     "technical": 5,
     "quality": 4,
     "communication": 4,
     "teamwork": 5
   },
-  "overall_rating": 5,
-  "strengths": "...",
-  "improvements": "...",
-  "comments": "...",
-  "recommendation": "Highly Recommended",
-  "submitted_at": "ISODate"
+  "overall_rating": 4.5,
+  "strengths": "Strong ownership and execution.",
+  "improvements": "Can improve cross-team communication.",
+  "comments": "Great internship performance.",
+  "recommendation": "Highly Recommended | null",
+  "revision": 1,
+  "is_latest": true,
+  "submitted_at": "ISODate",
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
 }
 ```
 
@@ -252,13 +316,60 @@ ACCESS_TOKEN_EXPIRE_MINUTES=60
 ```json
 {
   "_id": "ObjectId",
+  "company_id": "ObjectId",
   "type": "company_to_student | student_to_company",
   "fields": [
-    { "id": "1", "label": "Technical Skills", "type": "slider", "required": true }
+    {
+      "id": "1",
+      "label": "Technical Skills",
+      "type": "text | textarea | slider | rating",
+      "required": true,
+      "min_value": 1,
+      "max_value": 5,
+      "step": 1,
+      "order": 0,
+      "placeholder": "Optional helper text"
+    }
   ],
+  "version": 1,
+  "is_active": true,
+  "created_at": "ISODate",
   "updated_at": "ISODate"
 }
 ```
+
+### `downloads` collection
+```json
+{
+  "_id": "ObjectId",
+  "student_id": "ObjectId",
+  "company_id": "ObjectId",
+  "document_type": "feedback_report | internship_certificate | detailed_analysis",
+  "title": "Company Feedback Report",
+  "description": "Complete evaluation report.",
+  "file_name": "company-feedback-report.pdf",
+  "file_url": "https://storage.example.com/reports/company-feedback-report.pdf",
+  "mime_type": "application/pdf",
+  "size_bytes": 250880,
+  "generated_at": "ISODate",
+  "created_at": "ISODate",
+  "updated_at": "ISODate"
+}
+```
+
+### Frontend Field Alias Mapping
+
+The API schemas preserve frontend field names while storing normalized backend fields:
+
+- `COLLEGE` ↔ `college`
+- `Role` ↔ `role_title`
+- `supervisorEmail` ↔ `supervisor_email`
+- `startDate` ↔ `start_date`
+- `endDate` ↔ `end_date`
+- `overallRating` ↔ `overall_rating`
+- `templateId` ↔ `template_id`
+
+> Note: Student profile/domain data is intentionally stored in `students` (not `users`) to reduce duplication and support scale.
 
 ---
 
