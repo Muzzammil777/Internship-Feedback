@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
@@ -51,6 +51,7 @@ interface FeedbackStatus {
 }
 
 export default function CompanyFeedbackForm() {
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const students: Student[] = [
     {
       id: "1",
@@ -98,6 +99,38 @@ export default function CompanyFeedbackForm() {
   const [searchQuery, setSearchQuery] = useState("");
   const [feedbackStatus, setFeedbackStatus] = useState<FeedbackStatus>({});
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const loadFeedback = async () => {
+      try {
+        const response = await fetch(`${apiBaseUrl}/feedback/company`);
+        if (!response.ok) {
+          return;
+        }
+
+        const records: Array<{ studentId: string } & FeedbackStatus[string]> = await response.json();
+        const loadedStatus = records.reduce<FeedbackStatus>((accumulator, record) => {
+          accumulator[record.studentId] = {
+            submitted: true,
+            ratings: record.ratings,
+            overallRating: record.overallRating,
+            strengths: record.strengths,
+            improvements: record.improvements,
+            comments: record.comments,
+            recommendation: record.recommendation,
+          };
+          return accumulator;
+        }, {});
+        setFeedbackStatus(loadedStatus);
+      } catch {
+        setError("Unable to load saved company feedback.");
+      }
+    };
+
+    void loadFeedback();
+  }, [apiBaseUrl]);
 
   const selectedStudent = students.find((s) => s.id === selectedStudentId)!;
   const currentFeedback = feedbackStatus[selectedStudentId] || {
@@ -129,21 +162,69 @@ export default function CompanyFeedbackForm() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setFeedbackStatus({
-      ...feedbackStatus,
-      [selectedStudentId]: { ...currentFeedback, submitted: true },
-    });
-    setShowSuccess(true);
-    setTimeout(() => {
-      setShowSuccess(false);
-      // Move to next pending student
-      const nextStudent = students.find(
-        (s) => !feedbackStatus[s.id]?.submitted && s.id !== selectedStudentId
-      );
-      if (nextStudent) {
-        setSelectedStudentId(nextStudent.id);
+    void (async () => {
+      setIsSaving(true);
+      setError("");
+
+      try {
+        const response = await fetch(`${apiBaseUrl}/feedback/company`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            studentId: selectedStudent.id,
+            studentName: selectedStudent.name,
+            role: selectedStudent.Role,
+            college: selectedStudent.COLLEGE,
+            projectTitle: selectedStudent.projectTitle,
+            duration: selectedStudent.duration,
+            startDate: selectedStudent.startDate,
+            endDate: selectedStudent.endDate,
+            overallRating: currentFeedback.overallRating,
+            ratings: currentFeedback.ratings,
+            strengths: currentFeedback.strengths,
+            improvements: currentFeedback.improvements,
+            comments: currentFeedback.comments,
+            recommendation: currentFeedback.recommendation,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to save company feedback");
+        }
+
+        const saved = await response.json();
+        const updatedStatus: FeedbackStatus = {
+          ...feedbackStatus,
+          [selectedStudentId]: {
+            submitted: true,
+            ratings: saved.ratings,
+            overallRating: saved.overallRating,
+            strengths: saved.strengths,
+            improvements: saved.improvements,
+            comments: saved.comments,
+            recommendation: saved.recommendation,
+          },
+        };
+
+        setFeedbackStatus(updatedStatus);
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          const nextStudent = students.find(
+            (student) => !updatedStatus[student.id]?.submitted && student.id !== selectedStudentId
+          );
+          if (nextStudent) {
+            setSelectedStudentId(nextStudent.id);
+          }
+        }, 2000);
+      } catch {
+        setError("Could not save company feedback right now.");
+      } finally {
+        setIsSaving(false);
       }
-    }, 2000);
+    })();
   };
 
   const updateRating = (field: string, value: number) => {
@@ -625,10 +706,17 @@ export default function CompanyFeedbackForm() {
                       type="submit"
                       size="lg"
                       className="flex items-center gap-2 shadow-lg"
+                      disabled={isSaving}
                     >
                       <Send className="w-4 h-4" />
-                      Submit Feedback
+                      {isSaving ? "Saving..." : "Submit Feedback"}
                     </Button>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
+                    {error}
                   </div>
                 )}
 

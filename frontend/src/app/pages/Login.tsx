@@ -21,18 +21,19 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    const success = login(email, password);
+    void (async () => {
+      const user = await login(email, password);
 
-    if (success) {
-      // Determine role and navigate accordingly
-      if (email === DEMO_USERS.student.email) {
-        navigate("/student/dashboard");
-      } else if (email === DEMO_USERS.company.email) {
-        navigate("/company/student-details");
+      if (user) {
+        if (user.role === "student") {
+          navigate("/student/dashboard");
+        } else {
+          navigate("/company/student-details");
+        }
+      } else {
+        setError("Invalid email or password");
       }
-    } else {
-      setError("Invalid email or password");
-    }
+    })();
   };
 
   const copyCredentials = (type: "student" | "company") => {
@@ -313,7 +314,6 @@ export default function Login() {
                   type="submit"
                   size="lg"
                   className="w-full flex items-center justify-center gap-2"
-                  disabled={!selectedRole}
                 >
                   Sign In
                   <ArrowRight className="w-4 h-4" />
