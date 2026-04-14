@@ -99,6 +99,17 @@ interface FeedbackStatus {
     improvements: string;
     comments: string;
     recommendation: string;
+    technicalImprovementObserved: boolean;
+    workedIndependently: boolean;
+    explainedWorkClearly: boolean;
+    communicationResponsive: boolean;
+    professionalismMaintained: boolean;
+    openToFeedback: boolean;
+    positiveTeamContribution: boolean;
+    initiativeForNewSkills: boolean;
+    proactiveChallenges: boolean;
+    meaningfulProjectContribution: boolean;
+    considerForFullTime: boolean;
   };
 }
 
@@ -136,6 +147,51 @@ const DEFAULT_RATINGS: FeedbackStatus[string]["ratings"] = {
   ownershipOfTasks: 3,
 };
 
+const SYSTEM_META_MARKER = "[SYSTEM_META]";
+
+type SystemMeta = Omit<
+  FeedbackStatus[string],
+  "submitted" | "ratings" | "typeOfWorkHandled" | "difficultyLevel" | "overallRating" | "strengths" | "improvements" | "comments" | "recommendation"
+>;
+
+const DEFAULT_SYSTEM_META: SystemMeta = {
+  technicalImprovementObserved: false,
+  workedIndependently: false,
+  explainedWorkClearly: false,
+  communicationResponsive: false,
+  professionalismMaintained: false,
+  openToFeedback: false,
+  positiveTeamContribution: false,
+  initiativeForNewSkills: false,
+  proactiveChallenges: false,
+  meaningfulProjectContribution: false,
+  considerForFullTime: false,
+};
+
+const buildCommentsWithMeta = (comments: string, meta: SystemMeta) => {
+  const cleaned = comments.split(`\n${SYSTEM_META_MARKER}`)[0].trim();
+  return `${cleaned}\n${SYSTEM_META_MARKER}${JSON.stringify(meta)}`;
+};
+
+const parseMetaFromComments = (comments: string): { cleanedComments: string; meta: SystemMeta } => {
+  const markerIndex = comments.indexOf(`\n${SYSTEM_META_MARKER}`);
+  if (markerIndex < 0) {
+    return { cleanedComments: comments, meta: { ...DEFAULT_SYSTEM_META } };
+  }
+
+  const cleanedComments = comments.slice(0, markerIndex).trim();
+  const jsonPart = comments.slice(markerIndex + (`\n${SYSTEM_META_MARKER}`).length);
+  try {
+    const parsed = JSON.parse(jsonPart) as Partial<SystemMeta>;
+    return {
+      cleanedComments,
+      meta: { ...DEFAULT_SYSTEM_META, ...parsed },
+    };
+  } catch {
+    return { cleanedComments, meta: { ...DEFAULT_SYSTEM_META } };
+  }
+};
+
 export default function CompanyFeedbackForm() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const [students, setStudents] = useState<Student[]>([]);
@@ -149,6 +205,7 @@ export default function CompanyFeedbackForm() {
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [studentSubmittedFeedback, setStudentSubmittedFeedback] = useState<StudentSubmittedFeedback | null>(null);
   const [isLoadingStudentFeedback, setIsLoadingStudentFeedback] = useState(false);
+  const [showStudentSubmittedFeedback, setShowStudentSubmittedFeedback] = useState(false);
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [templateValues, setTemplateValues] = useState<Record<string, string | number>>({});
@@ -223,8 +280,9 @@ export default function CompanyFeedbackForm() {
             overallRating: record.overallRating,
             strengths: record.strengths,
             improvements: record.improvements,
-            comments: record.comments,
+            comments: parseMetaFromComments(record.comments ?? "").cleanedComments,
             recommendation: record.recommendation,
+            ...parseMetaFromComments(record.comments ?? "").meta,
           };
           return accumulator;
         }, {});
@@ -249,6 +307,17 @@ export default function CompanyFeedbackForm() {
     improvements: "",
     comments: "",
     recommendation: "Recommended",
+    technicalImprovementObserved: false,
+    workedIndependently: false,
+    explainedWorkClearly: false,
+    communicationResponsive: false,
+    professionalismMaintained: false,
+    openToFeedback: false,
+    positiveTeamContribution: false,
+    initiativeForNewSkills: false,
+    proactiveChallenges: false,
+    meaningfulProjectContribution: false,
+    considerForFullTime: false,
   };
   const isEditMode = editingStudentId === selectedStudentId;
   const isReadOnly = currentFeedback.submitted && !isEditMode;
@@ -257,10 +326,12 @@ export default function CompanyFeedbackForm() {
     const loadSelectedStudentFeedback = async () => {
       if (!selectedStudent?.email) {
         setStudentSubmittedFeedback(null);
+        setShowStudentSubmittedFeedback(false);
         return;
       }
 
       setIsLoadingStudentFeedback(true);
+      setShowStudentSubmittedFeedback(false);
       try {
         const response = await fetch(
           `${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(selectedStudent.email)}`
@@ -295,19 +366,17 @@ export default function CompanyFeedbackForm() {
     setTemplateValues(defaults);
   };
 
-  const handleUseTemplate = (template: FormTemplate) => {
-    const confirmed = window.confirm("Use this template?");
-    if (!confirmed) {
+  useEffect(() => {
+    const savedActiveTemplate = templates.find((template) => template.id === "active-companyToStudent") ?? null;
+    if (!savedActiveTemplate) {
+      setSelectedTemplateId(null);
+      setTemplateValues({});
       return;
     }
 
-    setSelectedTemplateId(template.id);
-    initializeTemplateValues(template);
-  };
-
-  const handleUseDefaultForm = () => {
-    setSelectedTemplateId(null);
-  };
+    setSelectedTemplateId(savedActiveTemplate.id);
+    initializeTemplateValues(savedActiveTemplate);
+  }, [templates]);
 
   const updateTemplateValue = (fieldId: string, value: string | number) => {
     setTemplateValues((previous) => ({
@@ -395,6 +464,29 @@ export default function CompanyFeedbackForm() {
 
       try {
         const resolvedFeedback = mapTemplateValuesToFeedback();
+        const normalizedRatings = {
+          ...resolvedFeedback.ratings,
+          opennessToFeedback: currentFeedback.openToFeedback ? 5 : 2,
+          initiativeToLearnNewThings: currentFeedback.initiativeForNewSkills ? 5 : 2,
+          contributionToTeamProject: currentFeedback.meaningfulProjectContribution ? 5 : 2,
+        };
+
+        const metaPayload: SystemMeta = {
+          technicalImprovementObserved: currentFeedback.technicalImprovementObserved,
+          workedIndependently: currentFeedback.workedIndependently,
+          explainedWorkClearly: currentFeedback.explainedWorkClearly,
+          communicationResponsive: currentFeedback.communicationResponsive,
+          professionalismMaintained: currentFeedback.professionalismMaintained,
+          openToFeedback: currentFeedback.openToFeedback,
+          positiveTeamContribution: currentFeedback.positiveTeamContribution,
+          initiativeForNewSkills: currentFeedback.initiativeForNewSkills,
+          proactiveChallenges: currentFeedback.proactiveChallenges,
+          meaningfulProjectContribution: currentFeedback.meaningfulProjectContribution,
+          considerForFullTime: currentFeedback.considerForFullTime,
+        };
+
+        const commentsWithMeta = buildCommentsWithMeta(resolvedFeedback.comments || "", metaPayload);
+
         const response = await fetch(`${apiBaseUrl}/feedback/company`, {
           method: "POST",
           headers: {
@@ -413,10 +505,10 @@ export default function CompanyFeedbackForm() {
             typeOfWorkHandled: resolvedFeedback.typeOfWorkHandled,
             difficultyLevel: resolvedFeedback.difficultyLevel,
             overallRating: resolvedFeedback.overallRating,
-            ratings: resolvedFeedback.ratings,
+            ratings: normalizedRatings,
             strengths: resolvedFeedback.strengths,
             improvements: resolvedFeedback.improvements,
-            comments: resolvedFeedback.comments,
+            comments: commentsWithMeta,
             recommendation: resolvedFeedback.recommendation,
           }),
         });
@@ -436,8 +528,9 @@ export default function CompanyFeedbackForm() {
             overallRating: saved.overallRating,
             strengths: saved.strengths,
             improvements: saved.improvements,
-            comments: saved.comments,
+            comments: parseMetaFromComments(saved.comments ?? "").cleanedComments,
             recommendation: saved.recommendation,
+            ...metaPayload,
           },
         };
 
@@ -535,6 +628,40 @@ export default function CompanyFeedbackForm() {
         className="w-full"
         disabled={disabled}
       />
+    </div>
+  );
+
+  const YesNoSection = ({
+    label,
+    value,
+    onChange,
+    disabled = false,
+  }: {
+    label: string;
+    value: boolean;
+    onChange: (value: boolean) => void;
+    disabled?: boolean;
+  }) => (
+    <div className="space-y-3">
+      <Label className="font-semibold">{label}</Label>
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant={value ? "default" : "outline"}
+          onClick={() => !disabled && onChange(true)}
+          disabled={disabled}
+        >
+          Yes
+        </Button>
+        <Button
+          type="button"
+          variant={!value ? "default" : "outline"}
+          onClick={() => !disabled && onChange(false)}
+          disabled={disabled}
+        >
+          No
+        </Button>
+      </div>
     </div>
   );
 
@@ -844,112 +971,101 @@ export default function CompanyFeedbackForm() {
               </div>
 
               {/* Feedback Form */}
-              <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+              <form onSubmit={handleSubmit} className="space-y-6 w-full">
                 <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                    <div className="flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-primary" />
                     <h2 className="text-lg font-bold text-foreground">Student Submitted Feedback</h2>
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex items-center gap-2"
+                      onClick={() => setShowStudentSubmittedFeedback((current) => !current)}
+                      disabled={isLoadingStudentFeedback || !studentSubmittedFeedback}
+                    >
+                      <ChevronRight className={`w-4 h-4 transition-transform ${showStudentSubmittedFeedback ? "rotate-90" : ""}`} />
+                      {showStudentSubmittedFeedback ? "Hide Student Feedback" : "View Student Feedback"}
+                    </Button>
                   </div>
 
                   {isLoadingStudentFeedback ? (
                     <p className="text-sm text-muted-foreground">Loading student feedback...</p>
                   ) : studentSubmittedFeedback ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Learning Experience</p>
-                          <p className="font-bold text-foreground">{studentSubmittedFeedback.learningExperience}/5</p>
+                    showStudentSubmittedFeedback ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Learning Experience</p>
+                            <p className="font-bold text-foreground">{studentSubmittedFeedback.learningExperience}/5</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Mentorship</p>
+                            <p className="font-bold text-foreground">{studentSubmittedFeedback.mentorship}/5</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Work Environment</p>
+                            <p className="font-bold text-foreground">{studentSubmittedFeedback.workEnvironment}/5</p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Communication</p>
+                            <p className="font-bold text-foreground">{studentSubmittedFeedback.communication}/5</p>
+                          </div>
                         </div>
-                        <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Mentorship</p>
-                          <p className="font-bold text-foreground">{studentSubmittedFeedback.mentorship}/5</p>
-                        </div>
-                        <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Work Environment</p>
-                          <p className="font-bold text-foreground">{studentSubmittedFeedback.workEnvironment}/5</p>
-                        </div>
-                        <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide">Communication</p>
-                          <p className="font-bold text-foreground">{studentSubmittedFeedback.communication}/5</p>
-                        </div>
-                      </div>
 
-                      <div className="space-y-3">
-                        <div className="p-3 rounded-lg bg-secondary/20 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Strengths</p>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {studentSubmittedFeedback.strengths || "No strengths shared."}
-                          </p>
-                        </div>
-                        <div className="p-3 rounded-lg bg-secondary/20 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Improvements</p>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {studentSubmittedFeedback.improvements || "No improvement notes shared."}
-                          </p>
-                        </div>
-                        <div className="p-3 rounded-lg bg-secondary/20 border border-border">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Overall Comments</p>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {studentSubmittedFeedback.overallComments || "No overall comments shared."}
-                          </p>
+                        <div className="space-y-3">
+                          <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Strengths</p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                              {studentSubmittedFeedback.strengths || "No strengths shared."}
+                            </p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Improvements</p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                              {studentSubmittedFeedback.improvements || "No improvement notes shared."}
+                            </p>
+                          </div>
+                          <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Overall Comments</p>
+                            <p className="text-sm text-foreground whitespace-pre-wrap">
+                              {studentSubmittedFeedback.overallComments || "No overall comments shared."}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Click the button above to view the student's submitted feedback.
+                      </p>
+                    )
                   ) : (
                     <p className="text-sm text-muted-foreground">This student has not submitted feedback yet.</p>
                   )}
                 </div>
 
-                {templates.length > 0 && (
-                  <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                    <h2 className="text-lg font-bold text-foreground mb-3">Form Mode</h2>
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        disabled={isReadOnly}
-                        onClick={handleUseDefaultForm}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                          selectedTemplateId === null
-                            ? "bg-foreground text-background border-foreground"
-                            : "bg-secondary/70 text-foreground border-border hover:bg-secondary"
-                        } ${isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
-                      >
-                        Default Form
-                      </button>
-                      {templates.map((template) => (
-                        <button
-                          key={template.id}
-                          type="button"
-                          disabled={isReadOnly}
-                          onClick={() => handleUseTemplate(template)}
-                          className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
-                            selectedTemplateId === template.id
-                              ? "bg-primary text-white border-primary"
-                              : "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                          } ${isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
-                        >
-                          {template.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Overall Rating */}
+                {/* Section 1: Overall Performance */}
                 <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                  <h2 className="text-lg font-bold text-foreground mb-4">
-                    Overall Performance (1-5)
-                  </h2>
-                  <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-5 border border-amber-200 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label className="font-bold">Overall Performance</Label>
-                      <StarRating
-                        value={currentFeedback.overallRating}
-                        onChange={(value) => updateField("overallRating", value)}
-                        size="lg"
-                        readonly={isReadOnly}
-                      />
+                  <h2 className="text-lg font-bold text-foreground mb-5">Section 1: Overall Performance</h2>
+                  <div className="space-y-5">
+                    <div className="space-y-2">
+                      <Label className="font-semibold">How would you rate the intern's overall performance?</Label>
+                      <StarRating value={currentFeedback.overallRating} onChange={(value) => updateField("overallRating", value)} size="lg" readonly={isReadOnly} />
                     </div>
+                    <RatingSection
+                      label="How well did the intern meet expectations?"
+                      value={currentFeedback.ratings.taskCompletion}
+                      onChange={(val) => updateRating("taskCompletion", val)}
+                      disabled={isReadOnly}
+                    />
+                    <RatingSection
+                      label="How consistent was the intern's performance throughout the internship?"
+                      value={currentFeedback.ratings.discipline}
+                      onChange={(val) => updateRating("discipline", val)}
+                      disabled={isReadOnly}
+                    />
                   </div>
                 </div>
 
@@ -1012,144 +1128,217 @@ export default function CompanyFeedbackForm() {
                   </div>
                 ) : (
                   <>
-                    {/* Detailed Ratings */}
+                    {/* Section 2: Technical Skills */}
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                      <h2 className="text-lg font-bold text-foreground mb-5">
-                        Detailed Evaluation
-                      </h2>
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 2: Technical Skills</h2>
                       <div className="space-y-5">
                         <RatingSection
-                          label="Technical Knowledge"
+                          label="How would you rate the intern's technical knowledge?"
                           value={currentFeedback.ratings.technicalKnowledge}
                           onChange={(val) => updateRating("technicalKnowledge", val)}
                           disabled={isReadOnly}
                         />
                         <RatingSection
-                          label="Code Quality / Implementation"
+                          label="How effective was the intern in applying technical skills?"
                           value={currentFeedback.ratings.codeQualityImplementation}
                           onChange={(val) => updateRating("codeQualityImplementation", val)}
                           disabled={isReadOnly}
                         />
                         <RatingSection
-                          label="Task Completion"
-                          value={currentFeedback.ratings.taskCompletion}
-                          onChange={(val) => updateRating("taskCompletion", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Productivity"
-                          value={currentFeedback.ratings.productivity}
-                          onChange={(val) => updateRating("productivity", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Attention to Detail"
+                          label="How would you rate the quality of work delivered?"
                           value={currentFeedback.ratings.attentionToDetail}
                           onChange={(val) => updateRating("attentionToDetail", val)}
                           disabled={isReadOnly}
                         />
-                        <RatingSection
-                          label="Communication Clarity"
-                          value={currentFeedback.ratings.communicationClarity}
-                          onChange={(val) => updateRating("communicationClarity", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Reporting / Updates"
-                          value={currentFeedback.ratings.reportingUpdates}
-                          onChange={(val) => updateRating("reportingUpdates", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Punctuality"
-                          value={currentFeedback.ratings.punctuality}
-                          onChange={(val) => updateRating("punctuality", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Responsibility"
-                          value={currentFeedback.ratings.responsibility}
-                          onChange={(val) => updateRating("responsibility", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Discipline"
-                          value={currentFeedback.ratings.discipline}
-                          onChange={(val) => updateRating("discipline", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Collaboration"
-                          value={currentFeedback.ratings.collaboration}
-                          onChange={(val) => updateRating("collaboration", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Adaptability"
-                          value={currentFeedback.ratings.adaptability}
-                          onChange={(val) => updateRating("adaptability", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Openness to Feedback"
-                          value={currentFeedback.ratings.opennessToFeedback}
-                          onChange={(val) => updateRating("opennessToFeedback", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Learning Ability"
-                          value={currentFeedback.ratings.learningAbility}
-                          onChange={(val) => updateRating("learningAbility", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Skill Improvement"
-                          value={currentFeedback.ratings.skillImprovement}
-                          onChange={(val) => updateRating("skillImprovement", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Initiative to Learn New Things"
-                          value={currentFeedback.ratings.initiativeToLearnNewThings}
-                          onChange={(val) => updateRating("initiativeToLearnNewThings", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Contribution to Team/Project"
-                          value={currentFeedback.ratings.contributionToTeamProject}
-                          onChange={(val) => updateRating("contributionToTeamProject", val)}
-                          disabled={isReadOnly}
-                        />
-                        <RatingSection
-                          label="Ownership of Tasks"
-                          value={currentFeedback.ratings.ownershipOfTasks}
-                          onChange={(val) => updateRating("ownershipOfTasks", val)}
+                        <YesNoSection
+                          label="Did the intern demonstrate improvement in technical skills over time?"
+                          value={currentFeedback.technicalImprovementObserved}
+                          onChange={(val) => updateField("technicalImprovementObserved", val)}
                           disabled={isReadOnly}
                         />
                       </div>
                     </div>
 
+                    {/* Section 3: Work Execution */}
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                      <h2 className="text-lg font-bold text-foreground mb-5">Work Scope</h2>
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 3: Work Execution</h2>
                       <div className="space-y-5">
+                        <RatingSection
+                          label="How effectively did the intern complete assigned tasks?"
+                          value={currentFeedback.ratings.taskCompletion}
+                          onChange={(val) => updateRating("taskCompletion", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How would you rate the intern's productivity?"
+                          value={currentFeedback.ratings.productivity}
+                          onChange={(val) => updateRating("productivity", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How well did the intern manage deadlines?"
+                          value={currentFeedback.ratings.reportingUpdates}
+                          onChange={(val) => updateRating("reportingUpdates", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Was the intern able to work independently when required?"
+                          value={currentFeedback.workedIndependently}
+                          onChange={(val) => updateField("workedIndependently", val)}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 4: Communication Skills */}
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 4: Communication Skills</h2>
+                      <div className="space-y-5">
+                        <RatingSection
+                          label="How would you rate the intern's communication skills?"
+                          value={currentFeedback.ratings.communicationClarity}
+                          onChange={(val) => updateRating("communicationClarity", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Was the intern able to clearly explain their work?"
+                          value={currentFeedback.explainedWorkClearly}
+                          onChange={(val) => updateField("explainedWorkClearly", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How effectively did the intern report progress?"
+                          value={currentFeedback.ratings.reportingUpdates}
+                          onChange={(val) => updateRating("reportingUpdates", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Was the intern responsive to communication?"
+                          value={currentFeedback.communicationResponsive}
+                          onChange={(val) => updateField("communicationResponsive", val)}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 5: Professional Behavior */}
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 5: Professional Behavior</h2>
+                      <div className="space-y-5">
+                        <RatingSection
+                          label="How would you rate the intern's punctuality?"
+                          value={currentFeedback.ratings.punctuality}
+                          onChange={(val) => updateRating("punctuality", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How responsible was the intern in handling tasks?"
+                          value={currentFeedback.ratings.responsibility}
+                          onChange={(val) => updateRating("responsibility", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How would you rate the intern's discipline and work ethics?"
+                          value={currentFeedback.ratings.discipline}
+                          onChange={(val) => updateRating("discipline", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Did the intern maintain professionalism in the workplace?"
+                          value={currentFeedback.professionalismMaintained}
+                          onChange={(val) => updateField("professionalismMaintained", val)}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 6: Teamwork & Collaboration */}
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 6: Teamwork and Collaboration</h2>
+                      <div className="space-y-5">
+                        <RatingSection
+                          label="How well did the intern collaborate with team members?"
+                          value={currentFeedback.ratings.collaboration}
+                          onChange={(val) => updateRating("collaboration", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Was the intern open to feedback and suggestions?"
+                          value={currentFeedback.openToFeedback}
+                          onChange={(val) => updateField("openToFeedback", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How adaptable was the intern to team dynamics?"
+                          value={currentFeedback.ratings.adaptability}
+                          onChange={(val) => updateRating("adaptability", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Did the intern contribute positively to the team?"
+                          value={currentFeedback.positiveTeamContribution}
+                          onChange={(val) => updateField("positiveTeamContribution", val)}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 7: Learning & Growth */}
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 7: Learning and Growth</h2>
+                      <div className="space-y-5">
+                        <RatingSection
+                          label="How would you rate the intern's learning ability?"
+                          value={currentFeedback.ratings.learningAbility}
+                          onChange={(val) => updateRating("learningAbility", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Did the intern show initiative to learn new skills?"
+                          value={currentFeedback.initiativeForNewSkills}
+                          onChange={(val) => updateField("initiativeForNewSkills", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How much improvement did you observe during the internship?"
+                          value={currentFeedback.ratings.skillImprovement}
+                          onChange={(val) => updateRating("skillImprovement", val)}
+                          disabled={isReadOnly}
+                        />
+                        <YesNoSection
+                          label="Was the intern proactive in taking up new challenges?"
+                          value={currentFeedback.proactiveChallenges}
+                          onChange={(val) => updateField("proactiveChallenges", val)}
+                          disabled={isReadOnly}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Section 8: Contribution & Impact */}
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 8: Contribution and Impact</h2>
+                      <div className="space-y-5">
+                        <YesNoSection
+                          label="Did the intern contribute meaningfully to projects?"
+                          value={currentFeedback.meaningfulProjectContribution}
+                          onChange={(val) => updateField("meaningfulProjectContribution", val)}
+                          disabled={isReadOnly}
+                        />
+                        <RatingSection
+                          label="How would you rate the intern's ownership of assigned tasks?"
+                          value={currentFeedback.ratings.ownershipOfTasks}
+                          onChange={(val) => updateRating("ownershipOfTasks", val)}
+                          disabled={isReadOnly}
+                        />
                         <div className="space-y-2">
-                          <Label className="font-semibold">Type of Work Handled</Label>
-                          <Input
-                            value={currentFeedback.typeOfWorkHandled}
-                            onChange={(e) => updateField("typeOfWorkHandled", e.target.value)}
-                            disabled={isReadOnly}
-                            placeholder="Describe the type of tasks handled"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="font-semibold">Difficulty Level of Tasks</Label>
+                          <Label className="font-semibold">What level of work did the intern handle?</Label>
                           <Select
                             value={currentFeedback.difficultyLevel}
                             onValueChange={(value) => updateField("difficultyLevel", value)}
                             disabled={isReadOnly}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select difficulty" />
+                              <SelectValue placeholder="Select work level" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Basic">Basic</SelectItem>
@@ -1161,17 +1350,15 @@ export default function CompanyFeedbackForm() {
                       </div>
                     </div>
 
-                    {/* Comments */}
+                    {/* Section 9: Strengths & Improvements */}
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                      <h2 className="text-lg font-bold text-foreground mb-5">
-                        Written Feedback
-                      </h2>
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 9: Strengths and Improvements</h2>
                       <div className="space-y-5">
                         <div className="space-y-2">
-                          <Label className="font-semibold">Key Strengths</Label>
+                          <Label className="font-semibold">What are the key strengths of the intern?</Label>
                           <Textarea
                             rows={4}
-                            placeholder="Describe the intern's key strengths and accomplishments..."
+                            placeholder="Describe the intern's key strengths and accomplishments."
                             value={currentFeedback.strengths}
                             onChange={(e) => updateField("strengths", e.target.value)}
                             disabled={isReadOnly}
@@ -1179,10 +1366,10 @@ export default function CompanyFeedbackForm() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <Label className="font-semibold">Areas for Improvement</Label>
+                          <Label className="font-semibold">In which areas does the intern need improvement?</Label>
                           <Textarea
                             rows={4}
-                            placeholder="Suggest areas where the intern could improve..."
+                            placeholder="Suggest areas where the intern could improve."
                             value={currentFeedback.improvements}
                             onChange={(e) => updateField("improvements", e.target.value)}
                             disabled={isReadOnly}
@@ -1192,15 +1379,23 @@ export default function CompanyFeedbackForm() {
                       </div>
                     </div>
 
-                    {/* Recommendation */}
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                      <h2 className="text-lg font-bold text-foreground mb-5">
-                        Hiring Recommendation
-                      </h2>
+                      <h2 className="text-lg font-bold text-foreground mb-5">Additional Comments</h2>
+                      <Textarea
+                        rows={4}
+                        placeholder="Any additional evaluator comments."
+                        value={currentFeedback.comments}
+                        onChange={(e) => updateField("comments", e.target.value)}
+                        disabled={isReadOnly}
+                        className="resize-none"
+                      />
+                    </div>
+
+                    {/* Section 10: Final Evaluation */}
+                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                      <h2 className="text-lg font-bold text-foreground mb-5">Section 10: Final Evaluation</h2>
                       <div className="space-y-4">
-                        <Label className="font-semibold">
-                          Would you hire this intern for a full-time position?
-                        </Label>
+                        <Label className="font-semibold">Hiring Recommendation</Label>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {["Highly Recommended", "Recommended", "Consider with Improvement", "Not Recommended"].map(
                             (option) => (
@@ -1226,6 +1421,13 @@ export default function CompanyFeedbackForm() {
                             )
                           )}
                         </div>
+
+                        <YesNoSection
+                          label="Would you consider this intern for a full-time role?"
+                          value={currentFeedback.considerForFullTime}
+                          onChange={(val) => updateField("considerForFullTime", val)}
+                          disabled={isReadOnly}
+                        />
                       </div>
                     </div>
                   </>

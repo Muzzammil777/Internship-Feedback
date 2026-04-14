@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import Field, field_validator, model_validator
 
@@ -33,7 +33,40 @@ class CompanyToStudentFeedbackCreate(BaseFeedbackCreate):
         return normalize_rating_map(values, min_value=1, max_value=5, max_metrics=32)
 
 
+class StudentQuestionAnswerPayload(APIModel):
+    question_id: str = Field(alias="questionId", min_length=1, max_length=100)
+    label: str = Field(min_length=1, max_length=200)
+    type: Literal["rating", "boolean", "enum", "text"]
+    value: Union[bool, int, str]
+
+    @model_validator(mode="after")
+    def validate_type_value_pair(self) -> "StudentQuestionAnswerPayload":
+        if self.type == "rating":
+            if not isinstance(self.value, int) or isinstance(self.value, bool):
+                raise ValueError("rating answer must be an integer")
+            if self.value < 1 or self.value > 5:
+                raise ValueError("rating answer must be between 1 and 5")
+        elif self.type == "boolean":
+            if not isinstance(self.value, bool):
+                raise ValueError("boolean answer must be true or false")
+        elif self.type == "enum":
+            if not isinstance(self.value, str) or not self.value.strip():
+                raise ValueError("enum answer must be a non-empty string")
+        elif self.type == "text":
+            if not isinstance(self.value, str):
+                raise ValueError("text answer must be a string")
+        return self
+
+
+class StudentSectionPayload(APIModel):
+    section_id: str = Field(alias="sectionId", min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=200)
+    questions: List[StudentQuestionAnswerPayload] = Field(min_length=1, max_length=64)
+
+
 class StudentToCompanyFeedbackCreate(BaseFeedbackCreate):
+    sections: Optional[List[StudentSectionPayload]] = None
+
     # Preferred dynamic payload when using form templates.
     ratings: Optional[Dict[str, int]] = Field(default=None, max_length=32)
 
@@ -54,6 +87,9 @@ class StudentToCompanyFeedbackCreate(BaseFeedbackCreate):
 
     @model_validator(mode="after")
     def validate_required_payload(self) -> "StudentToCompanyFeedbackCreate":
+        if self.sections:
+            return self
+
         if self.ratings:
             return self
 
@@ -71,6 +107,16 @@ class StudentToCompanyFeedbackCreate(BaseFeedbackCreate):
         return self
 
     def to_ratings_map(self) -> Dict[str, int]:
+        if self.sections:
+            section_ratings: Dict[str, int] = {}
+            for section in self.sections:
+                for question in section.questions:
+                    if question.type != "rating":
+                        continue
+                    section_ratings[question.question_id] = int(question.value)
+            if section_ratings:
+                return section_ratings
+
         if self.ratings:
             return self.ratings
 

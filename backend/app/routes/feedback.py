@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
 
 from bson import ObjectId
@@ -54,17 +54,96 @@ class CompanyFeedbackCreate(BaseModel):
     recommendation: str = "Recommended"
 
 
+class StudentFeedbackQuestion(BaseModel):
+    questionId: str = Field(min_length=1, max_length=100)
+    label: str = Field(min_length=1, max_length=200)
+    type: Literal["rating", "boolean", "enum", "text"]
+    value: Union[bool, int, str]
+
+
+class StudentFeedbackSection(BaseModel):
+    sectionId: str = Field(min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=200)
+    questions: List[StudentFeedbackQuestion] = Field(min_length=1, max_length=64)
+
+
 class StudentFeedbackCreate(BaseModel):
     studentEmail: str
     studentName: str
     companyName: str
-    learningExperience: int = Field(ge=0, le=5)
-    mentorship: int = Field(ge=0, le=5)
-    workEnvironment: int = Field(ge=0, le=5)
-    communication: int = Field(ge=0, le=5)
+
+    # New sectioned questionnaire payload.
+    sections: Optional[List[StudentFeedbackSection]] = None
+
+    # Backward-compatible fields used by older clients.
+    learningExperience: Optional[int] = Field(default=None, ge=0, le=5)
+    mentorship: Optional[int] = Field(default=None, ge=0, le=5)
+    workEnvironment: Optional[int] = Field(default=None, ge=0, le=5)
+    communication: Optional[int] = Field(default=None, ge=0, le=5)
     strengths: str = ""
     improvements: str = ""
     overallComments: str = ""
+
+
+def _extract_rating_values_from_sections(sections: List[StudentFeedbackSection]) -> List[int]:
+    rating_values: List[int] = []
+    for section in sections:
+        for question in section.questions:
+            if question.type != "rating":
+                continue
+
+            if not isinstance(question.value, int) or isinstance(question.value, bool):
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Question '{question.questionId}' expects integer rating value",
+                )
+            if question.value < 1 or question.value > 5:
+                raise HTTPException(
+                    status_code=422,
+                    detail=f"Question '{question.questionId}' rating must be between 1 and 5",
+                )
+            rating_values.append(question.value)
+    return rating_values
+
+
+def _validate_section_answers(sections: List[StudentFeedbackSection]) -> None:
+    for section in sections:
+        for question in section.questions:
+            value = question.value
+            if question.type == "rating":
+                if not isinstance(value, int) or isinstance(value, bool) or value < 1 or value > 5:
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Question '{question.questionId}' rating must be an integer between 1 and 5",
+                    )
+            elif question.type == "boolean":
+                if not isinstance(value, bool):
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Question '{question.questionId}' expects a boolean value",
+                    )
+            elif question.type == "enum":
+                if not isinstance(value, str) or not value.strip():
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Question '{question.questionId}' expects a non-empty option",
+                    )
+            elif question.type == "text":
+                if not isinstance(value, str):
+                    raise HTTPException(
+                        status_code=422,
+                        detail=f"Question '{question.questionId}' expects a text value",
+                    )
+
+
+def _calculate_legacy_overall(payload: StudentFeedbackCreate) -> float:
+    values = [
+        int(payload.learningExperience or 0),
+        int(payload.mentorship or 0),
+        int(payload.workEnvironment or 0),
+        int(payload.communication or 0),
+    ]
+    return round(sum(values) / len(values), 2)
 
 
 def _normalize_document(document: Dict[str, Any]) -> Dict[str, Any]:
@@ -146,6 +225,29 @@ async def list_student_feedback(request: Request, student_email: Optional[str] =
 async def save_student_feedback(request: Request, payload: StudentFeedbackCreate):
     document = payload.model_dump()
     document["createdAt"] = datetime.now(timezone.utc).isoformat()
+
+    if payload.sections:
+        _validate_section_answers(payload.sections)
+        rating_values = _extract_rating_values_from_sections(payload.sections)
+        document["overallRating"] = round(sum(rating_values) / len(rating_values), 2) if rating_values else None
+        document["ratingCount"] = len(rating_values)
+    else:
+        legacy_values = [
+            payload.learningExperience,
+            payload.mentorship,
+            payload.workEnvironment,
+            payload.communication,
+        ]
+        if any(value is None for value in legacy_values):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    "Provide either sections payload or all legacy rating fields: "
+                    "learningExperience, mentorship, workEnvironment, communication"
+                ),
+            )
+        document["overallRating"] = _calculate_legacy_overall(payload)
+        document["ratingCount"] = 4
 
     if not getattr(request.app.state, "mongodb_ready", False):
         existing = _student_feedback_store.get(payload.studentEmail, {})

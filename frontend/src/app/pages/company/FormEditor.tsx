@@ -10,13 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { Plus, Trash2, Save, GripVertical, Eye, Settings2, Type, AlignLeft, Sliders, Star, Building2, GraduationCap } from "lucide-react";
+import { Plus, Trash2, Save, GripVertical, Eye, Settings2, Type, AlignLeft, Sliders, Star, Building2, GraduationCap, CheckCircle2, MessageSquare } from "lucide-react";
 
 interface FormField {
   id: string;
   label: string;
-  type: "text" | "slider" | "textarea" | "rating";
+  type: "text" | "slider" | "textarea" | "rating" | "boolean" | "enum";
   required: boolean;
+  options?: string[];
 }
 
 type FormType = "companyToStudent" | "studentToCompany";
@@ -63,19 +64,42 @@ export default function CompanyFormEditor() {
 
   // Student → Company Feedback Form (Students evaluate company)
   const [studentToCompanyFields, setStudentToCompanyFields] = useState<FormField[]>([
-    { id: "1", label: "Learning Experience", type: "rating", required: true },
-    { id: "2", label: "Mentorship Quality", type: "rating", required: true },
-    { id: "3", label: "Work Environment", type: "slider", required: true },
-    { id: "4", label: "Communication & Support", type: "slider", required: true },
+    { id: "1", label: "How would you rate your overall internship experience?", type: "rating", required: true },
+    { id: "2", label: "How relevant was the internship to your field of study?", type: "rating", required: true },
+    { id: "3", label: "How satisfied are you with the learning outcomes?", type: "rating", required: true },
+    { id: "4", label: "How would you rate the onboarding process?", type: "rating", required: true },
+    { id: "5", label: "How supportive was the team or mentor?", type: "rating", required: true },
+    { id: "6", label: "Did you gain practical knowledge during the internship?", type: "boolean", required: true },
+    { id: "7", label: "What new skills did you learn?", type: "textarea", required: true },
+    { id: "8", label: "How confident do you feel applying these skills?", type: "rating", required: true },
+    { id: "9", label: "Were you given opportunities to work on real-time projects?", type: "boolean", required: true },
+    { id: "10", label: "How would you rate your mentor's guidance?", type: "rating", required: true },
+    { id: "11", label: "Was feedback provided regularly?", type: "boolean", required: true },
+    { id: "12", label: "Was communication clear and effective?", type: "rating", required: true },
+    { id: "13", label: "Did you feel comfortable asking questions?", type: "boolean", required: true },
+    { id: "14", label: "How would you rate the work culture?", type: "rating", required: true },
+    { id: "15", label: "Were tasks clearly assigned?", type: "boolean", required: true },
+    { id: "16", label: "Was the workload manageable?", type: "rating", required: true },
+    { id: "17", label: "Did the internship meet your expectations?", type: "boolean", required: true },
+    { id: "18", label: "Were project requirements clearly explained?", type: "boolean", required: true },
+    { id: "19", label: "How challenging was your project?", type: "enum", required: true, options: ["easy", "moderate", "difficult"] },
+    { id: "20", label: "Did the project help improve your skills?", type: "boolean", required: true },
+    { id: "21", label: "Rate your project experience.", type: "rating", required: true },
+    { id: "22", label: "Would you recommend this internship to others?", type: "boolean", required: true },
+    { id: "23", label: "Are you interested in future opportunities with us?", type: "boolean", required: true },
+    { id: "24", label: "Rate your overall satisfaction.", type: "rating", required: true },
+    { id: "25", label: "What did you like most about the internship?", type: "textarea", required: true },
+    { id: "26", label: "What challenges did you face?", type: "textarea", required: true },
+    { id: "27", label: "What improvements would you suggest?", type: "textarea", required: true },
+    { id: "28", label: "Any additional comments?", type: "textarea", required: false },
+    { id: "29", label: "Do you feel the internship duration was sufficient for learning?", type: "boolean", required: true },
+    { id: "30", label: "Do you think performance-based stipend after 3 months is fair?", type: "boolean", required: true },
+    { id: "31", label: "Would you continue if offered a stipend after evaluation?", type: "boolean", required: true },
   ]);
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [savedTemplates, setSavedTemplates] = useState<FormTemplate[]>([]);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [defaultDrafts, setDefaultDrafts] = useState<{
-    companyToStudent: FormField[];
-    studentToCompany: FormField[];
-  } | null>(null);
+  const [saveFeedback, setSaveFeedback] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -87,6 +111,21 @@ export default function CompanyFormEditor() {
       const parsed = JSON.parse(stored) as FormTemplate[];
       if (Array.isArray(parsed)) {
         setSavedTemplates(parsed);
+
+        const savedCompanyForm = parsed.find(
+          (entry) => entry.id === "active-companyToStudent" && entry.formType === "companyToStudent"
+        );
+        const savedStudentForm = parsed.find(
+          (entry) => entry.id === "active-studentToCompany" && entry.formType === "studentToCompany"
+        );
+
+        if (savedCompanyForm?.fields?.length) {
+          setCompanyToStudentFields(savedCompanyForm.fields.map((field) => ({ ...field })));
+        }
+
+        if (savedStudentForm?.fields?.length) {
+          setStudentToCompanyFields(savedStudentForm.fields.map((field) => ({ ...field })));
+        }
       }
     } catch {
       // Ignore malformed local storage payloads and start clean.
@@ -100,13 +139,6 @@ export default function CompanyFormEditor() {
   // Get current fields based on active form type
   const fields = activeFormType === "companyToStudent" ? companyToStudentFields : studentToCompanyFields;
   const setFields = activeFormType === "companyToStudent" ? setCompanyToStudentFields : setStudentToCompanyFields;
-
-  const cloneFieldsForTemplate = (sourceFields: FormField[]): FormField[] => {
-    return sourceFields.map((field) => ({
-      ...field,
-      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    }));
-  };
 
   const addField = () => {
     const newField: FormField = {
@@ -131,54 +163,28 @@ export default function CompanyFormEditor() {
     );
   };
 
-  const handleSaveTemplate = () => {
-    const templateName = window.prompt("Template name", `${activeFormType === "companyToStudent" ? "Company to Student" : "Student to Company"} Template`);
-    if (!templateName || !templateName.trim()) {
+  const handleSaveCurrentForm = () => {
+    const confirmed = window.confirm("Save changes to this form?");
+    if (!confirmed) {
       return;
     }
 
-    const newTemplate: FormTemplate = {
-      id: `${Date.now()}`,
-      name: templateName.trim(),
+    const fixedId = `active-${activeFormType}`;
+    const fixedName = activeFormType === "companyToStudent" ? "Company to Student Form" : "Student to Company Form";
+    const nextRecord: FormTemplate = {
+      id: fixedId,
+      name: fixedName,
       formType: activeFormType,
       fields: fields.map((field) => ({ ...field })),
     };
 
-    setSavedTemplates((previous) => [newTemplate, ...previous]);
-  };
+    setSavedTemplates((previous) => {
+      const withoutCurrentType = previous.filter((entry) => entry.formType !== activeFormType);
+      return [nextRecord, ...withoutCurrentType];
+    });
 
-  const handleUseTemplate = (template: FormTemplate) => {
-    const shouldUse = window.confirm("Use this template?");
-    if (!shouldUse) {
-      return;
-    }
-
-    if (!defaultDrafts) {
-      setDefaultDrafts({
-        companyToStudent: companyToStudentFields.map((field) => ({ ...field })),
-        studentToCompany: studentToCompanyFields.map((field) => ({ ...field })),
-      });
-    }
-
-    const preparedFields = cloneFieldsForTemplate(template.fields);
-    setSelectedTemplateId(template.id);
-    setActiveFormType(template.formType);
-    if (template.formType === "companyToStudent") {
-      setCompanyToStudentFields(preparedFields);
-    } else {
-      setStudentToCompanyFields(preparedFields);
-    }
-    setEditingField(null);
-  };
-
-  const handleUseDefault = () => {
-    if (defaultDrafts) {
-      setCompanyToStudentFields(defaultDrafts.companyToStudent.map((field) => ({ ...field })));
-      setStudentToCompanyFields(defaultDrafts.studentToCompany.map((field) => ({ ...field })));
-      setDefaultDrafts(null);
-    }
-    setSelectedTemplateId(null);
-    setEditingField(null);
+    setSaveFeedback("Form saved successfully.");
+    window.setTimeout(() => setSaveFeedback(""), 2500);
   };
 
   const getFieldIcon = (type: string) => {
@@ -187,6 +193,8 @@ export default function CompanyFormEditor() {
       case "textarea": return AlignLeft;
       case "slider": return Sliders;
       case "rating": return Star;
+      case "boolean": return CheckCircle2;
+      case "enum": return MessageSquare;
       default: return Type;
     }
   };
@@ -195,7 +203,7 @@ export default function CompanyFormEditor() {
     <div className="min-h-full bg-background">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 pt-6 pb-3 sm:pt-8 sm:pb-4">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -213,86 +221,60 @@ export default function CompanyFormEditor() {
                 <p className="text-muted-foreground text-lg">
                   Customize feedback form fields and evaluation criteria
                 </p>
+                <div className="mt-4">
+                  <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    Form Type
+                  </div>
+                  <div className="bg-card border border-border rounded-2xl p-1.5 shadow-md inline-flex gap-1 flex-wrap w-full sm:w-auto">
+                    <button
+                      onClick={() => setActiveFormType("companyToStudent")}
+                      className={`px-3 sm:px-4 py-2 rounded-xl font-bold text-xs transition-all duration-200 whitespace-nowrap ${
+                        activeFormType === "companyToStudent"
+                          ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        Company → Student
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => setActiveFormType("studentToCompany")}
+                      className={`px-3 sm:px-4 py-2 rounded-xl font-bold text-xs transition-all duration-200 whitespace-nowrap ${
+                        activeFormType === "studentToCompany"
+                          ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <GraduationCap className="w-4 h-4" />
+                        Student → Company
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <Button className="flex items-center gap-2 shadow-lg" size="lg" onClick={handleSaveTemplate}>
+            </div>
+
+            <div className="mb-5 flex justify-start">
+              <Button className="flex items-center justify-center gap-2 shadow-lg w-full lg:w-auto" size="lg" onClick={handleSaveCurrentForm}>
                 <Save className="w-4 h-4" />
-                Save Templates
+                Save Form
               </Button>
             </div>
 
-            <div className="mb-5">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                Form Source
+            {saveFeedback && (
+              <div className="mb-2 text-sm font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 inline-block">
+                {saveFeedback}
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={handleUseDefault}
-                  className={`px-3 py-1.5 text-xs rounded-full border font-semibold transition-colors ${
-                    selectedTemplateId === null
-                      ? "bg-foreground text-background border-foreground"
-                      : "bg-secondary/70 text-foreground border-border hover:bg-secondary"
-                  }`}
-                >
-                  Default
-                </button>
-                {savedTemplates.map((template) => (
-                  <button
-                    key={template.id}
-                    type="button"
-                    onClick={() => handleUseTemplate(template)}
-                    className={`px-3 py-1.5 text-xs rounded-full border font-semibold transition-colors ${
-                      selectedTemplateId === template.id
-                        ? "bg-primary text-white border-primary"
-                        : template.formType === "companyToStudent"
-                        ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
-                        : "bg-teal-500/10 text-teal-700 border-teal-500/20 hover:bg-teal-500/20"
-                    }`}
-                  >
-                    {template.name}
-                  </button>
-                ))}
-                {savedTemplates.length === 0 && (
-                  <span className="text-sm text-muted-foreground">No templates saved yet.</span>
-                )}
-              </div>
-            </div>
-
-            {/* Form Type Toggle */}
-            <div className="bg-card border border-border rounded-2xl p-1.5 sm:p-2 shadow-md inline-flex gap-1 sm:gap-2 flex-wrap">
-              <button
-                onClick={() => setActiveFormType("companyToStudent")}
-                className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 ${
-                  activeFormType === "companyToStudent"
-                    ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  Company → Student Form
-                </div>
-              </button>
-              <button
-                onClick={() => setActiveFormType("studentToCompany")}
-                className={`px-3 sm:px-6 py-2 sm:py-3 rounded-xl font-bold text-xs sm:text-sm transition-all duration-200 ${
-                  activeFormType === "studentToCompany"
-                    ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md"
-                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4" />
-                  Student → Company Form
-                </div>
-              </button>
-            </div>
+            )}
           </motion.div>
         </div>
       </div>
 
       {/* Two-Panel Layout */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
         {/* Form Type Indicator */}
         <motion.div
           key={activeFormType}
@@ -329,7 +311,7 @@ export default function CompanyFormEditor() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1.12fr)_minmax(0,1fr)] gap-6 xl:gap-8">
           {/* Left Panel - Field Configuration */}
           <motion.div
             key={`config-${activeFormType}`}
@@ -437,6 +419,8 @@ export default function CompanyFormEditor() {
                                     <SelectItem value="textarea">📄 Text Area</SelectItem>
                                     <SelectItem value="slider">📊 Rating Slider</SelectItem>
                                     <SelectItem value="rating">⭐ Star Rating</SelectItem>
+                                    <SelectItem value="boolean">✅ Yes / No</SelectItem>
+                                    <SelectItem value="enum">📋 Multiple Choice</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -562,6 +546,24 @@ export default function CompanyFormEditor() {
                           </svg>
                         ))}
                       </div>
+                    )}
+                    {field.type === "boolean" && (
+                      <div className="flex gap-2">
+                        <button type="button" className="px-3 py-2 rounded-lg border border-border bg-secondary/40 text-sm font-semibold">Yes</button>
+                        <button type="button" className="px-3 py-2 rounded-lg border border-border bg-secondary/40 text-sm font-semibold">No</button>
+                      </div>
+                    )}
+                    {field.type === "enum" && (
+                      <Select defaultValue={field.options?.[0] ?? ""}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose an option" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(field.options ?? ["easy", "moderate", "difficult"]).map((option) => (
+                            <SelectItem key={option} value={option}>{option}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     )}
                   </motion.div>
                 ))}

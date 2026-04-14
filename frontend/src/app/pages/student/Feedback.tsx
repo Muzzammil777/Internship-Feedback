@@ -1,11 +1,19 @@
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
-import RatingBar from "../../components/shared/RatingBar";
+import {
+  Award,
+  Building2,
+  CheckCircle2,
+  MessageSquare,
+  Send,
+  TrendingUp,
+} from "lucide-react";
+
 import StarRating from "../../components/shared/StarRating";
+import RatingBar from "../../components/shared/RatingBar";
 import { Button } from "../../components/ui/button";
-import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
-import { Building2, MessageSquare, TrendingUp, Award, CheckCircle2, Send, Star, Users, Coffee, Lightbulb, GraduationCap } from "lucide-react";
+import { Textarea } from "../../components/ui/textarea";
 import { useAuth } from "../../context/AuthContext";
 
 interface StudentProfile {
@@ -16,167 +24,359 @@ interface StudentProfile {
 }
 
 interface CompanyFeedback {
-  overallRating: number;
-  ratings: {
-    technical: number;
-    quality: number;
-    communication: number;
-    teamwork: number;
-    problemSolving: number;
-    initiative: number;
-    professionalism: number;
-    learning: number;
-  };
-  strengths: string;
-  improvements: string;
-  comments: string;
-  recommendation: string;
+  overallRating?: number;
+  ratings?: Record<string, number>;
+  strengths?: string;
+  improvements?: string;
+  comments?: string;
+  recommendation?: string;
+}
+
+type QuestionType = "rating" | "boolean" | "enum" | "text";
+type QuestionValue = number | boolean | string;
+
+interface Question {
+  id: string;
+  label: string;
+  type: QuestionType;
+  required: boolean;
+  options?: string[];
+}
+
+interface Section {
+  id: string;
+  title: string;
+  questions: Question[];
+}
+
+interface SubmittedQuestion {
+  questionId: string;
+  label: string;
+  type: QuestionType;
+  value: QuestionValue;
+}
+
+interface SubmittedSection {
+  sectionId: string;
+  title: string;
+  questions: SubmittedQuestion[];
+}
+
+interface StudentFeedbackRecord {
+  sections?: SubmittedSection[];
+  learningExperience?: number;
+  mentorship?: number;
+  workEnvironment?: number;
+  communication?: number;
+  strengths?: string;
+  improvements?: string;
+  overallComments?: string;
+}
+
+const sections: Section[] = [
+  {
+    id: "internship_experience",
+    title: "Section 1: Internship Experience",
+    questions: [
+      { id: "overallInternshipExperience", label: "How would you rate your overall internship experience?", type: "rating", required: true },
+      { id: "relevanceToStudy", label: "How relevant was the internship to your field of study?", type: "rating", required: true },
+      { id: "learningOutcomesSatisfaction", label: "How satisfied are you with the learning outcomes?", type: "rating", required: true },
+      { id: "onboardingProcess", label: "How would you rate the onboarding process?", type: "rating", required: true },
+      { id: "teamMentorSupport", label: "How supportive was the team/mentor?", type: "rating", required: true },
+    ],
+  },
+  {
+    id: "learning_development",
+    title: "Section 2: Learning and Development",
+    questions: [
+      { id: "practicalKnowledge", label: "Did you gain practical knowledge during the internship?", type: "boolean", required: true },
+      { id: "newSkillsLearned", label: "What new skills did you learn?", type: "text", required: true },
+      { id: "confidenceApplyingSkills", label: "How confident do you feel applying these skills?", type: "rating", required: true },
+      { id: "realTimeProjects", label: "Were you given opportunities to work on real-time projects?", type: "boolean", required: true },
+    ],
+  },
+  {
+    id: "mentorship_support",
+    title: "Section 3: Mentorship and Support",
+    questions: [
+      { id: "mentorGuidance", label: "How would you rate your mentor's guidance?", type: "rating", required: true },
+      { id: "feedbackRegular", label: "Was feedback provided regularly?", type: "boolean", required: true },
+      { id: "communicationClear", label: "Was communication clear and effective?", type: "rating", required: true },
+      { id: "comfortableAskingQuestions", label: "Did you feel comfortable asking questions?", type: "boolean", required: true },
+    ],
+  },
+  {
+    id: "work_environment",
+    title: "Section 4: Work Environment",
+    questions: [
+      { id: "workCulture", label: "How would you rate the work culture?", type: "rating", required: true },
+      { id: "tasksClearlyAssigned", label: "Were tasks clearly assigned?", type: "boolean", required: true },
+      { id: "workloadManageable", label: "Was the workload manageable?", type: "rating", required: true },
+      { id: "metExpectations", label: "Did the internship meet your expectations?", type: "boolean", required: true },
+    ],
+  },
+  {
+    id: "project_feedback",
+    title: "Section 5: Project Feedback",
+    questions: [
+      { id: "requirementsExplained", label: "Were project requirements clearly explained?", type: "boolean", required: true },
+      { id: "projectChallengeLevel", label: "How challenging was your project?", type: "enum", required: true, options: ["easy", "moderate", "difficult"] },
+      { id: "projectImprovedSkills", label: "Did the project help improve your skills?", type: "boolean", required: true },
+      { id: "projectExperienceRating", label: "Rate your project experience.", type: "rating", required: true },
+    ],
+  },
+  {
+    id: "overall_satisfaction",
+    title: "Section 6: Overall Satisfaction",
+    questions: [
+      { id: "recommendToOthers", label: "Would you recommend this internship to others?", type: "boolean", required: true },
+      { id: "interestedFutureOpportunities", label: "Are you interested in future opportunities with us?", type: "boolean", required: true },
+      { id: "overallSatisfaction", label: "Rate your overall satisfaction.", type: "rating", required: true },
+    ],
+  },
+  {
+    id: "suggestions_feedback",
+    title: "Section 7: Suggestions and Feedback",
+    questions: [
+      { id: "likedMost", label: "What did you like most about the internship?", type: "text", required: true },
+      { id: "challengesFaced", label: "What challenges did you face?", type: "text", required: true },
+      { id: "improvementsSuggested", label: "What improvements would you suggest?", type: "text", required: true },
+      { id: "additionalComments", label: "Any additional comments?", type: "text", required: false },
+    ],
+  },
+  {
+    id: "assessment_policy",
+    title: "Section 8: Assessment Policy",
+    questions: [
+      { id: "durationSufficient", label: "Do you feel the internship duration was sufficient for learning?", type: "boolean", required: true },
+      { id: "stipendFair", label: "Do you think performance-based stipend after 3 months is fair?", type: "boolean", required: true },
+      { id: "continueWithStipend", label: "Would you continue if offered a stipend after evaluation?", type: "boolean", required: true },
+    ],
+  },
+];
+
+function flattenSaved(sectionsData: SubmittedSection[]): Record<string, QuestionValue> {
+  const data: Record<string, QuestionValue> = {};
+  for (const section of sectionsData) {
+    for (const question of section.questions) {
+      data[question.questionId] = question.value;
+    }
+  }
+  return data;
+}
+
+function formatMetricLabel(metricKey: string): string {
+  return metricKey.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (v) => v.toUpperCase());
 }
 
 export default function StudentFeedback() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const { user } = useAuth();
+
   const [activeTab, setActiveTab] = useState<"company" | "student">("company");
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
-
-  const [studentFeedback, setStudentFeedback] = useState({
-    learningExperience: 0,
-    mentorship: 0,
-    workEnvironment: 0,
-    communication: 0,
-    strengths: "",
-    improvements: "",
-    overallComments: "",
-  });
+  const [answers, setAnswers] = useState<Record<string, QuestionValue>>({});
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadData = async () => {
+    const load = async () => {
       if (!user?.email) return;
 
-      try {
-        // Fetch Profile for names/companies
-        const profileRes = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
-        if (profileRes.ok) {
-          const profileData = (await profileRes.json()) as StudentProfile;
-          setProfile(profileData);
+      const profileRes = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
+      let studentId = "";
+      if (profileRes.ok) {
+        const profileData = (await profileRes.json()) as StudentProfile;
+        setProfile(profileData);
+        studentId = profileData.id;
+      }
 
-          if (profileData.id) {
-            const companyFeedbackRes = await fetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(profileData.id)}`);
-            if (companyFeedbackRes.ok) {
-              const records = (await companyFeedbackRes.json()) as CompanyFeedback[];
-              setCompanyFeedback(records[0] ?? null);
-            }
-          }
+      if (studentId) {
+        const companyRes = await fetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(studentId)}`);
+        if (companyRes.ok) {
+          const list = (await companyRes.json()) as CompanyFeedback[];
+          setCompanyFeedback(list[0] ?? null);
         }
+      }
 
-        // Fetch existing feedback
-        const response = await fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
-        if (response.ok) {
-          const records = await response.json();
-          if (records.length > 0) {
-            const latest = records[0];
-            setStudentFeedback({
-              learningExperience: latest.learningExperience,
-              mentorship: latest.mentorship,
-              workEnvironment: latest.workEnvironment,
-              communication: latest.communication,
-              strengths: latest.strengths,
-              improvements: latest.improvements,
-              overallComments: latest.overallComments,
+      const ownRes = await fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
+      if (ownRes.ok) {
+        const list = (await ownRes.json()) as StudentFeedbackRecord[];
+        if (list.length > 0) {
+          const latest = list[0];
+          if (latest.sections) {
+            setAnswers(flattenSaved(latest.sections));
+          } else {
+            setAnswers({
+              overallInternshipExperience: latest.learningExperience ?? 0,
+              mentorGuidance: latest.mentorship ?? 0,
+              workCulture: latest.workEnvironment ?? 0,
+              communicationClear: latest.communication ?? 0,
+              likedMost: latest.strengths ?? "",
+              improvementsSuggested: latest.improvements ?? "",
+              additionalComments: latest.overallComments ?? "",
             });
-            setIsSubmitted(true);
           }
+          setIsSubmitted(true);
         }
-      } catch (err) {
-        console.error("Failed to load data", err);
-        setError("Unable to load feedback data.");
       }
     };
 
-    void loadData();
+    void load();
   }, [apiBaseUrl, user?.email]);
 
-  const handleRatingChange = (category: string, value: number) => {
-    setStudentFeedback({ ...studentFeedback, [category]: value });
+  const average = useMemo(() => {
+    const ratingIds = sections.flatMap((section) =>
+      section.questions.filter((question) => question.type === "rating").map((question) => question.id),
+    );
+    const values = ratingIds
+      .map((id) => answers[id])
+      .filter((value): value is number => typeof value === "number" && value > 0);
+    if (!values.length) return null;
+    return Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2));
+  }, [answers]);
+
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setIsSaving(true);
+    setError("");
+
+    const missing = sections
+      .flatMap((section) => section.questions.filter((question) => question.required))
+      .find((question) => {
+        const value = answers[question.id];
+        if (question.type === "rating") return typeof value !== "number" || value < 1;
+        if (question.type === "boolean") return typeof value !== "boolean";
+        if (question.type === "enum") return typeof value !== "string" || !value.trim();
+        return typeof value !== "string" || !value.trim();
+      });
+
+    if (missing) {
+      setError(`Please answer: ${missing.label}`);
+      setIsSaving(false);
+      return;
+    }
+
+    try {
+      const payload: SubmittedSection[] = sections.map((section) => ({
+        sectionId: section.id,
+        title: section.title,
+        questions: section.questions.map((question) => ({
+          questionId: question.id,
+          label: question.label,
+          type: question.type,
+          value: answers[question.id] ?? "",
+        })),
+      }));
+
+      const response = await fetch(`${apiBaseUrl}/feedback/student`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          studentEmail: user?.email ?? "",
+          studentName: user?.name ?? "Student",
+          companyName: profile?.company_name || profile?.companyName || "Organization",
+          sections: payload,
+          strengths: typeof answers.likedMost === "string" ? answers.likedMost : "",
+          improvements: typeof answers.improvementsSuggested === "string" ? answers.improvementsSuggested : "",
+          overallComments: typeof answers.additionalComments === "string" ? answers.additionalComments : "",
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to submit");
+      setIsSubmitted(true);
+    } catch {
+      setError("Could not save your feedback right now.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    void (async () => {
-      setIsSaving(true);
-      setError("");
+  const renderControl = (question: Question) => {
+    const value = answers[question.id];
 
-      try {
-        const response = await fetch(`${apiBaseUrl}/feedback/student`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            studentEmail: user?.email ?? "",
-            studentName: user?.name ?? "Student",
-            companyName: profile?.company_name || profile?.companyName || "Organization",
-            learningExperience: studentFeedback.learningExperience,
-            mentorship: studentFeedback.mentorship,
-            workEnvironment: studentFeedback.workEnvironment,
-            communication: studentFeedback.communication,
-            strengths: studentFeedback.strengths,
-            improvements: studentFeedback.improvements,
-            overallComments: studentFeedback.overallComments,
-          }),
-        });
+    if (question.type === "rating") {
+      return (
+        <StarRating
+          value={typeof value === "number" ? value : 0}
+          onChange={(v) => setAnswers((s) => ({ ...s, [question.id]: v }))}
+          readonly={isSubmitted}
+          size="md"
+        />
+      );
+    }
 
-        if (!response.ok) {
-          throw new Error("Failed to save student feedback");
-        }
+    if (question.type === "boolean") {
+      return (
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={value === true ? "default" : "outline"}
+            onClick={() => setAnswers((s) => ({ ...s, [question.id]: true }))}
+            disabled={isSubmitted}
+          >
+            Yes
+          </Button>
+          <Button
+            type="button"
+            variant={value === false ? "default" : "outline"}
+            onClick={() => setAnswers((s) => ({ ...s, [question.id]: false }))}
+            disabled={isSubmitted}
+          >
+            No
+          </Button>
+        </div>
+      );
+    }
 
-        setIsSubmitted(true);
-      } catch {
-        setError("Could not save your feedback right now.");
-      } finally {
-        setIsSaving(false);
-      }
-    })();
+    if (question.type === "enum") {
+      return (
+        <div className="flex gap-2 flex-wrap">
+          {(question.options ?? []).map((option) => (
+            <Button
+              key={option}
+              type="button"
+              variant={value === option ? "default" : "outline"}
+              onClick={() => setAnswers((s) => ({ ...s, [question.id]: option }))}
+              disabled={isSubmitted}
+            >
+              {option}
+            </Button>
+          ))}
+        </div>
+      );
+    }
+
+    return (
+      <Textarea
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => setAnswers((s) => ({ ...s, [question.id]: e.target.value }))}
+        rows={3}
+        disabled={isSubmitted}
+      />
+    );
   };
 
   return (
     <div className="min-h-full bg-background">
-      {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
+          <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
             <div className="flex items-center gap-2 mb-2">
               <MessageSquare className="w-5 h-5 text-primary" />
               <span className="text-sm font-semibold text-primary">Feedback</span>
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">
-              Internship Feedback
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              View company evaluation and share your internship experience
-            </p>
+            <h1 className="text-2xl sm:text-4xl font-bold text-foreground mb-2">Internship Feedback</h1>
+            <p className="text-muted-foreground text-lg">View company evaluation and share your internship experience</p>
           </motion.div>
         </div>
       </div>
 
-      {/* Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
-        {/* Toggle Tabs */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="mb-8"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
           <div className="bg-card border border-border rounded-2xl p-2 shadow-md inline-flex gap-2">
             <button
               onClick={() => setActiveTab("company")}
@@ -207,385 +407,177 @@ export default function StudentFeedback() {
           </div>
         </motion.div>
 
-        {/* Company Feedback - READ ONLY */}
         {activeTab === "company" && (
           <motion.div
             key="company-feedback"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all duration-300"
           >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-lg shadow-primary/50">
-                <Building2 className="w-7 h-7 text-white" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  Company Evaluation
-                </h2>
-                <p className="text-sm text-muted-foreground mt-1">{profile?.company_name || profile?.companyName || "Organization"}</p>
-              </div>
-            </div>
-            <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-blue-200">
-              Read Only
-            </div>
-          </div>
-
-          {/* Overall Rating */}
-          <div className="mb-10 pb-8 border-b border-border">
-            <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6 sm:gap-2 text-center sm:text-left">
-                <div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">
-                    Overall Performance
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Evaluated by {profile?.supervisor || "Supervisor"}
-                  </p>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-4">
+                <div className="p-4 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-lg shadow-primary/30">
+                  <Building2 className="w-7 h-7 text-white" />
                 </div>
-                <div className="flex items-center gap-4">
-                  <StarRating value={companyFeedback?.overallRating ?? 0} readonly size="lg" />
-                  <div className="text-center">
-                    <div className="text-4xl font-bold bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
-                      {(companyFeedback?.overallRating ?? 0).toFixed(1)}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-medium">
-                      {companyFeedback ? "From company evaluation" : "No rating yet"}
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Company Evaluation</h2>
+                  <p className="text-sm text-muted-foreground mt-1">{profile?.company_name || profile?.companyName || "Organization"}</p>
+                </div>
+              </div>
+              <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-blue-200">
+                Read Only
+              </div>
+            </div>
+
+            <div className="mb-10 pb-8 border-b border-border">
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl p-6 border border-amber-200">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-6">
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-2">Overall Performance</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Evaluated by {profile?.supervisor || "Supervisor"}
                     </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <StarRating value={companyFeedback?.overallRating ?? 0} readonly size="lg" />
+                    <div className="text-center">
+                      <div className="text-4xl font-bold bg-gradient-to-r from-amber-500 to-orange-600 bg-clip-text text-transparent">
+                        {(companyFeedback?.overallRating ?? 0).toFixed(1)}
+                      </div>
+                      <p className="text-xs text-muted-foreground font-medium">
+                        {companyFeedback ? "From company evaluation" : "No rating yet"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Rating Categories */}
-          <div className="mb-10">
-            <h3 className="text-lg font-bold text-foreground mb-6">Performance Metrics</h3>
-            <div className="space-y-5">
-              <RatingBar label="Technical Skills" value={companyFeedback?.ratings.technical ?? 0} color="primary" />
-              <RatingBar label="Work Quality" value={companyFeedback?.ratings.quality ?? 0} color="primary" />
-              <RatingBar label="Communication" value={companyFeedback?.ratings.communication ?? 0} color="accent" />
-              <RatingBar label="Teamwork" value={companyFeedback?.ratings.teamwork ?? 0} color="primary" />
-              <RatingBar label="Problem Solving" value={companyFeedback?.ratings.problemSolving ?? 0} color="primary" />
-              <RatingBar label="Initiative" value={companyFeedback?.ratings.initiative ?? 0} color="accent" />
-              <RatingBar label="Professionalism" value={companyFeedback?.ratings.professionalism ?? 0} color="primary" />
-              <RatingBar label="Learning Ability" value={companyFeedback?.ratings.learning ?? 0} color="success" />
+            <div className="mb-10">
+              <h3 className="text-lg font-bold text-foreground mb-6">Performance Metrics</h3>
+              {companyFeedback?.ratings && Object.keys(companyFeedback.ratings).length > 0 ? (
+                <div className="space-y-5">
+                  {Object.entries(companyFeedback.ratings).map(([key, value]) => (
+                    <RatingBar key={key} label={formatMetricLabel(key)} value={value} color="primary" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No metric ratings submitted yet.</p>
+              )}
             </div>
-          </div>
 
-          {/* Comments Section */}
-          <div className="space-y-5 mb-8">
-            <h3 className="text-lg font-bold text-foreground">Detailed Feedback</h3>
+            <div className="space-y-5 mb-8">
+              <h3 className="text-lg font-bold text-foreground">Detailed Feedback</h3>
 
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200 shadow-sm"
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-md">
-                  <TrendingUp className="w-5 h-5 text-white" />
+              <motion.div whileHover={{ scale: 1.01 }} className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200 shadow-sm">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg shadow-md">
+                    <TrendingUp className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Strengths</h3>
                 </div>
-                <h3 className="text-lg font-bold text-foreground">Strengths</h3>
-              </div>
-              <p className="text-foreground leading-relaxed italic">
-                {companyFeedback?.strengths || "No evaluation strengths have been recorded by the company yet."}
-              </p>
-            </motion.div>
+                <p className="text-foreground leading-relaxed">{companyFeedback?.strengths || "No strengths shared yet."}</p>
+              </motion.div>
 
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200 shadow-sm"
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-md">
-                  <Award className="w-5 h-5 text-white" />
+              <motion.div whileHover={{ scale: 1.01 }} className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-6 border border-amber-200 shadow-sm">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg shadow-md">
+                    <Award className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Areas for Growth</h3>
                 </div>
-                <h3 className="text-lg font-bold text-foreground">
-                  Areas for Growth
-                </h3>
-              </div>
-              <p className="text-foreground leading-relaxed italic">
-                {companyFeedback?.improvements || "No growth areas have been recorded yet."}
-              </p>
-            </motion.div>
+                <p className="text-foreground leading-relaxed">{companyFeedback?.improvements || "No growth areas shared yet."}</p>
+              </motion.div>
 
-            <motion.div
-              whileHover={{ scale: 1.01 }}
-              className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 shadow-sm"
-            >
-              <div className="flex items-start gap-3 mb-4">
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md">
-                  <MessageSquare className="w-5 h-5 text-white" />
+              <motion.div whileHover={{ scale: 1.01 }} className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200 shadow-sm">
+                <div className="flex items-start gap-3 mb-4">
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg shadow-md">
+                    <MessageSquare className="w-5 h-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-foreground">Overall Comments</h3>
                 </div>
-                <h3 className="text-lg font-bold text-foreground">
-                  Overall Comments
-                </h3>
-              </div>
-              <p className="text-foreground leading-relaxed italic">
-                {companyFeedback?.comments || "Awaiting overall comments from your supervisor."}
-              </p>
-            </motion.div>
-          </div>
+                <p className="text-foreground leading-relaxed">{companyFeedback?.comments || "Awaiting overall comments from supervisor."}</p>
+              </motion.div>
+            </div>
 
-          {/* Recommendation */}
-          <div className="mt-8 pt-8 border-t border-border">
-            <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
-              <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 text-center sm:text-left">
-                <div>
-                  <h3 className="text-lg font-bold text-foreground mb-2">
-                    Hiring Recommendation
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    Would you hire this intern for a full-time position?
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/50">
-                  <CheckCircle2 className="w-5 h-5" />
-                  {companyFeedback?.recommendation || "Awaiting recommendation"}
+            <div className="mt-8 pt-8 border-t border-border">
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-foreground mb-2">Hiring Recommendation</h3>
+                    <p className="text-sm text-muted-foreground">Would you hire this intern for a full-time position?</p>
+                  </div>
+                  <div className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/40">
+                    <CheckCircle2 className="w-5 h-5" />
+                    {companyFeedback?.recommendation || "Pending"}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
           </motion.div>
         )}
 
-        {/* Student Feedback About Company - EDITABLE */}
         {activeTab === "student" && (
           <motion.div
             key="student-feedback"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all duration-300"
           >
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
-            <div className="flex items-center gap-4">
-              <div className="p-4 bg-gradient-to-br from-teal-500 to-cyan-600 rounded-xl shadow-lg shadow-teal-500/50">
-                <MessageSquare className="w-7 h-7 text-white" />
-              </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">
-                  Your Feedback About Company
-                </h2>
+                <h2 className="text-2xl font-bold text-foreground">Your Feedback About Company</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   Share your internship experience at {profile?.company_name || profile?.companyName || "your organization"}
                 </p>
               </div>
-            </div>
-            {isSubmitted && (
-              <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-emerald-200 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                Submitted
-              </div>
-            )}
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Rating Categories */}
-            <div>
-              <h3 className="text-xl font-bold text-foreground mb-6">
-                Rate Your Experience
-              </h3>
-              <div className="space-y-6">
-                {/* Learning Experience */}
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border border-purple-100">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-purple-500 rounded-lg">
-                        <GraduationCap className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-bold text-foreground">
-                        Learning Experience
-                      </span>
-                    </div>
-                    <StarRating
-                      value={studentFeedback.learningExperience}
-                      onChange={(value) => handleRatingChange("learningExperience", value)}
-                      readonly={isSubmitted}
-                      size="md"
-                    />
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="px-4 py-2 bg-sky-100 text-sky-800 rounded-xl text-xs font-bold uppercase tracking-wide border border-sky-200">
+                  Average: {average === null ? "0.00" : average.toFixed(2)} / 5
                 </div>
-
-                {/* Mentorship */}
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 border border-blue-100">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-500 rounded-lg">
-                        <Users className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-bold text-foreground">
-                        Mentorship Quality
-                      </span>
-                    </div>
-                    <StarRating
-                      value={studentFeedback.mentorship}
-                      onChange={(value) => handleRatingChange("mentorship", value)}
-                      readonly={isSubmitted}
-                      size="md"
-                    />
+                {isSubmitted && (
+                  <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-emerald-200 flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4" />
+                    Submitted
                   </div>
-                </div>
-
-                {/* Work Environment */}
-                <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-5 border border-emerald-100">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-emerald-500 rounded-lg">
-                        <Coffee className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-bold text-foreground">
-                        Work Environment
-                      </span>
-                    </div>
-                    <StarRating
-                      value={studentFeedback.workEnvironment}
-                      onChange={(value) => handleRatingChange("workEnvironment", value)}
-                      readonly={isSubmitted}
-                      size="md"
-                    />
-                  </div>
-                </div>
-
-                {/* Communication */}
-                <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl p-5 border border-amber-100">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-amber-500 rounded-lg">
-                        <MessageSquare className="w-5 h-5 text-white" />
-                      </div>
-                      <span className="font-bold text-foreground">
-                        Communication & Support
-                      </span>
-                    </div>
-                    <StarRating
-                      value={studentFeedback.communication}
-                      onChange={(value) => handleRatingChange("communication", value)}
-                      readonly={isSubmitted}
-                      size="md"
-                    />
-                  </div>
-                </div>
+                )}
               </div>
             </div>
 
-            {/* Text Feedback */}
-            <div className="space-y-6">
-              <h3 className="text-xl font-bold text-foreground">
-                Detailed Feedback
-              </h3>
-
-              {/* Strengths */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg">
-                    <TrendingUp className="w-5 h-5 text-white" />
-                  </div>
-                  <Label className="text-base font-bold text-foreground">
-                    What did the company do well?
-                  </Label>
+            <form onSubmit={submit} className="space-y-6">
+              {sections.map((section) => (
+                <div key={section.id} className="border border-border rounded-xl p-4 sm:p-5 space-y-4 bg-muted/10">
+                  <h3 className="font-semibold text-foreground">{section.title}</h3>
+                  {section.questions.map((question) => (
+                    <div key={question.id} className="space-y-2">
+                      <Label>
+                        {question.label}
+                        {question.required ? " *" : ""}
+                      </Label>
+                      {renderControl(question)}
+                    </div>
+                  ))}
                 </div>
-                <Textarea
-                  value={studentFeedback.strengths}
-                  onChange={(e) =>
-                    setStudentFeedback({ ...studentFeedback, strengths: e.target.value })
-                  }
-                  placeholder="Describe the company's strengths, positive aspects of the internship, what you appreciated..."
-                  rows={4}
-                  className="leading-relaxed text-base"
-                  disabled={isSubmitted}
-                />
-              </div>
+              ))}
 
-              {/* Improvements */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg">
-                    <Lightbulb className="w-5 h-5 text-white" />
-                  </div>
-                  <Label className="text-base font-bold text-foreground">
-                    What could be improved?
-                  </Label>
-                </div>
-                <Textarea
-                  value={studentFeedback.improvements}
-                  onChange={(e) =>
-                    setStudentFeedback({ ...studentFeedback, improvements: e.target.value })
-                  }
-                  placeholder="Suggest areas for improvement, challenges faced, constructive feedback..."
-                  rows={4}
-                  className="leading-relaxed text-base"
-                  disabled={isSubmitted}
-                />
-              </div>
-
-              {/* Overall Comments */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg">
-                    <MessageSquare className="w-5 h-5 text-white" />
-                  </div>
-                  <Label className="text-base font-bold text-foreground">
-                    Overall Experience
-                  </Label>
-                </div>
-                <Textarea
-                  value={studentFeedback.overallComments}
-                  onChange={(e) =>
-                    setStudentFeedback({
-                      ...studentFeedback,
-                      overallComments: e.target.value,
-                    })
-                  }
-                  placeholder="Share your overall thoughts about the internship, key takeaways, recommendations..."
-                  rows={5}
-                  className="leading-relaxed text-base"
-                  disabled={isSubmitted}
-                />
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            {!isSubmitted && (
-              <div className="flex justify-end pt-6 border-t border-border">
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="flex items-center gap-2 shadow-lg"
-                  disabled={isSaving}
-                >
+              {!isSubmitted && (
+                <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
                   <Send className="w-4 h-4" />
                   {isSaving ? "Saving..." : "Submit Feedback"}
                 </Button>
-              </div>
-            )}
+              )}
 
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
-                {error}
-              </div>
-            )}
+              {error && <div className="text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{error}</div>}
 
-            {isSubmitted && (
-              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-6 border border-emerald-200">
-                <div className="flex items-center gap-3">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-600" />
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">
-                      Thank you for your feedback!
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      Your feedback has been submitted successfully and will help improve future internship programs.
-                    </p>
-                  </div>
+              {isSubmitted && (
+                <div className="text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4" />
+                  Thank you for your feedback.
                 </div>
-              </div>
-            )}
-          </form>
+              )}
+            </form>
           </motion.div>
         )}
       </div>
