@@ -12,6 +12,7 @@ import {
 import StarRating from "../../components/shared/StarRating";
 import RatingBar from "../../components/shared/RatingBar";
 import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { useAuth } from "../../context/AuthContext";
@@ -21,6 +22,8 @@ interface StudentProfile {
   company_name?: string;
   companyName?: string;
   supervisor?: string;
+  role_title?: string;
+  Role?: string;
 }
 
 interface CompanyFeedback {
@@ -64,6 +67,7 @@ interface SubmittedSection {
 
 interface StudentFeedbackRecord {
   sections?: SubmittedSection[];
+  department?: string;
   learningExperience?: number;
   mentorship?: number;
   workEnvironment?: number;
@@ -177,6 +181,7 @@ export default function StudentFeedback() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
   const [answers, setAnswers] = useState<Record<string, QuestionValue>>({});
+  const [department, setDepartment] = useState("");
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -186,12 +191,15 @@ export default function StudentFeedback() {
     const load = async () => {
       if (!user?.email) return;
 
+      let profileDepartment = "";
       const profileRes = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
       let studentId = "";
       if (profileRes.ok) {
         const profileData = (await profileRes.json()) as StudentProfile;
         setProfile(profileData);
         studentId = profileData.id;
+        profileDepartment = profileData.role_title || profileData.Role || "";
+        setDepartment(profileDepartment);
       }
 
       if (studentId) {
@@ -207,6 +215,7 @@ export default function StudentFeedback() {
         const list = (await ownRes.json()) as StudentFeedbackRecord[];
         if (list.length > 0) {
           const latest = list[0];
+          setDepartment(latest.department || profileDepartment || "");
           if (latest.sections) {
             setAnswers(flattenSaved(latest.sections));
           } else {
@@ -260,6 +269,12 @@ export default function StudentFeedback() {
       return;
     }
 
+    if (!department.trim()) {
+      setError("Please enter your department.");
+      setIsSaving(false);
+      return;
+    }
+
     try {
       const payload: SubmittedSection[] = sections.map((section) => ({
         sectionId: section.id,
@@ -278,6 +293,7 @@ export default function StudentFeedback() {
         body: JSON.stringify({
           studentEmail: user?.email ?? "",
           studentName: user?.name ?? "Student",
+          department: department.trim(),
           companyName: profile?.company_name || profile?.companyName || "Organization",
           sections: payload,
           strengths: typeof answers.likedMost === "string" ? answers.likedMost : "",
@@ -547,6 +563,16 @@ export default function StudentFeedback() {
             </div>
 
             <form onSubmit={submit} className="space-y-6">
+              <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+                <Label className="font-semibold">Department *</Label>
+                <Input
+                  value={department}
+                  onChange={(event) => setDepartment(event.target.value)}
+                  disabled={isSubmitted}
+                  placeholder="Enter your department"
+                />
+              </div>
+
               {sections.map((section) => (
                 <div key={section.id} className="border border-border rounded-xl p-4 sm:p-5 space-y-4 bg-muted/10">
                   <h3 className="font-semibold text-foreground">{section.title}</h3>

@@ -71,6 +71,7 @@ class StudentFeedbackCreate(BaseModel):
     studentEmail: str
     studentName: str
     companyName: str
+    department: str = ""
 
     # New sectioned questionnaire payload.
     sections: Optional[List[StudentFeedbackSection]] = None

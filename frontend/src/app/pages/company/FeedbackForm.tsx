@@ -56,8 +56,9 @@ interface BackendStudent {
 interface FormTemplateField {
   id: string;
   label: string;
-  type: "text" | "slider" | "textarea" | "rating";
+  type: "text" | "slider" | "textarea" | "rating" | "boolean" | "enum";
   required: boolean;
+  options?: string[];
 }
 
 interface FormTemplate {
@@ -68,6 +69,30 @@ interface FormTemplate {
 }
 
 const TEMPLATE_STORAGE_KEY = "company-form-templates";
+const STUDENT_LIST_CACHE_KEY = "company-feedback-students-cache";
+const SELECTED_STUDENT_CACHE_KEY = "company-feedback-selected-student";
+
+const HIRING_RECOMMENDATION_OPTIONS = [
+  "Highly Recommended",
+  "Recommended",
+  "Consider with Improvement",
+] as const;
+
+const getRecommendationButtonClass = (option: string, selected: boolean): string => {
+  if (!selected) {
+    return "bg-white text-foreground border-border hover:bg-secondary/40";
+  }
+
+  if (option === "Highly Recommended") {
+    return "bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-500/30";
+  }
+
+  if (option === "Recommended") {
+    return "bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-lg shadow-blue-500/30";
+  }
+
+  return "bg-gradient-to-r from-amber-500 to-orange-600 text-white border-transparent shadow-lg shadow-amber-500/30";
+};
 
 interface FeedbackStatus {
   [studentId: string]: {
@@ -218,7 +243,24 @@ export default function CompanyFeedbackForm() {
       }
       const parsed = JSON.parse(stored) as FormTemplate[];
       if (Array.isArray(parsed)) {
-        setTemplates(parsed.filter((template) => template.formType === "companyToStudent"));
+        const normalized = parsed
+          .filter((template) => template.formType === "companyToStudent")
+          .map((template) => ({
+            ...template,
+            fields: template.fields.map((field) => {
+              const looksLikeRecommendation = field.label.toLowerCase().includes("recommend");
+              if (looksLikeRecommendation && field.type === "text") {
+                return {
+                  ...field,
+                  type: "enum" as const,
+                  options: [...HIRING_RECOMMENDATION_OPTIONS],
+                };
+              }
+              return field;
+            }),
+          }));
+
+        setTemplates(normalized);
       }
     } catch {
       // Ignore malformed template payloads.
@@ -227,6 +269,20 @@ export default function CompanyFeedbackForm() {
 
   useEffect(() => {
     const loadStudents = async () => {
+      try {
+        const cachedStudentsRaw = sessionStorage.getItem(STUDENT_LIST_CACHE_KEY);
+        const cachedSelectedStudentId = sessionStorage.getItem(SELECTED_STUDENT_CACHE_KEY);
+        if (cachedStudentsRaw) {
+          const cachedStudents = JSON.parse(cachedStudentsRaw) as Student[];
+          if (Array.isArray(cachedStudents) && cachedStudents.length > 0) {
+            setStudents(cachedStudents);
+            setSelectedStudentId((current) => current || cachedSelectedStudentId || cachedStudents[0].id);
+          }
+        }
+      } catch {
+        // Ignore malformed cached students payload.
+      }
+
       setIsLoadingStudents(true);
       try {
         const response = await fetch(`${apiBaseUrl}/students`);
@@ -249,8 +305,13 @@ export default function CompanyFeedbackForm() {
         }));
 
         setStudents(mappedStudents);
+        sessionStorage.setItem(STUDENT_LIST_CACHE_KEY, JSON.stringify(mappedStudents));
         if (mappedStudents.length > 0) {
-          setSelectedStudentId((current) => current || mappedStudents[0].id);
+          setSelectedStudentId((current) => {
+            const nextSelected = current || mappedStudents[0].id;
+            sessionStorage.setItem(SELECTED_STUDENT_CACHE_KEY, nextSelected);
+            return nextSelected;
+          });
         }
       } catch {
         setError("Unable to load students from backend.");
@@ -544,6 +605,7 @@ export default function CompanyFeedbackForm() {
           );
           if (nextStudent) {
             setSelectedStudentId(nextStudent.id);
+            sessionStorage.setItem(SELECTED_STUDENT_CACHE_KEY, nextStudent.id);
           }
         }, 2000);
       } catch {
@@ -724,7 +786,10 @@ export default function CompanyFeedbackForm() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.2 }}
-                  onClick={() => setSelectedStudentId(student.id)}
+                  onClick={() => {
+                    setSelectedStudentId(student.id);
+                    sessionStorage.setItem(SELECTED_STUDENT_CACHE_KEY, student.id);
+                  }}
                   className={`p-4 rounded-xl cursor-pointer transition-all ${
                     isSelected
                       ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg"
@@ -796,7 +861,10 @@ export default function CompanyFeedbackForm() {
             return (
               <button
                 key={student.id}
-                onClick={() => setSelectedStudentId(student.id)}
+                onClick={() => {
+                  setSelectedStudentId(student.id);
+                  sessionStorage.setItem(SELECTED_STUDENT_CACHE_KEY, student.id);
+                }}
                 className={`flex-shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl transition-all ${
                   isSelected
                     ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
@@ -820,9 +888,32 @@ export default function CompanyFeedbackForm() {
 
       {/* RIGHT PANEL - Feedback Form */}
       <div className="flex-1">
-        {isLoadingStudents ? (
-          <div className="h-full flex items-center justify-center">
-            <p className="text-muted-foreground">Loading students...</p>
+        {isLoadingStudents && students.length === 0 ? (
+          <div className="p-4 sm:p-8 space-y-6">
+            <div className="flex justify-end">
+              <p className="text-sm text-muted-foreground">Loading students...</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-7 shadow-sm animate-pulse">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
+                <div className="w-20 h-20 rounded-full bg-secondary/70" />
+                <div className="flex-1 space-y-3 w-full">
+                  <div className="h-7 w-56 rounded-md bg-secondary/70" />
+                  <div className="h-4 w-40 rounded-md bg-secondary/60" />
+                  <div className="h-4 w-64 rounded-md bg-secondary/60" />
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm animate-pulse space-y-4">
+              <div className="h-5 w-48 rounded-md bg-secondary/70" />
+              <div className="h-4 w-full rounded-md bg-secondary/50" />
+              <div className="h-4 w-5/6 rounded-md bg-secondary/50" />
+              <div className="h-4 w-4/6 rounded-md bg-secondary/50" />
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm animate-pulse space-y-4">
+              <div className="h-5 w-40 rounded-md bg-secondary/70" />
+              <div className="h-11 w-full rounded-xl bg-secondary/60" />
+              <div className="h-11 w-full rounded-xl bg-secondary/60" />
+            </div>
           </div>
         ) : students.length === 0 ? (
           <div className="h-full flex items-center justify-center p-6 text-center">
@@ -1121,6 +1212,64 @@ export default function CompanyFeedbackForm() {
                                 showLabel={true}
                               />
                             )}
+                            {field.type === "enum" && (
+                              <>
+                                <Label className="font-semibold">
+                                  {field.label}
+                                  {field.required ? <span className="text-destructive ml-1">*</span> : null}
+                                </Label>
+                                <div className="flex flex-wrap gap-2">
+                                  {(field.options && field.options.length > 0 ? field.options : [...HIRING_RECOMMENDATION_OPTIONS]).map((option) => (
+                                    <button
+                                      key={option}
+                                      type="button"
+                                      disabled={isReadOnly}
+                                      onClick={() => updateTemplateValue(field.id, option)}
+                                      className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all duration-200 ${
+                                        field.label.toLowerCase().includes("recommend")
+                                          ? getRecommendationButtonClass(option, String(currentValue) === option)
+                                          : String(currentValue) === option
+                                          ? "bg-primary text-white border-primary"
+                                          : "bg-white text-foreground border-border hover:bg-secondary/40"
+                                      } ${isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
+                                    >
+                                      <span className="flex items-center gap-2">
+                                        {String(currentValue) === option ? <CheckCircle2 className="w-4 h-4" /> : null}
+                                        {option}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              </>
+                            )}
+                            {field.type === "boolean" && (
+                              <>
+                                <Label className="font-semibold">
+                                  {field.label}
+                                  {field.required ? <span className="text-destructive ml-1">*</span> : null}
+                                </Label>
+                                <div className="flex flex-wrap gap-2">
+                                  {["Yes", "No"].map((option) => {
+                                    const boolValue = option === "Yes";
+                                    return (
+                                      <button
+                                        key={option}
+                                        type="button"
+                                        disabled={isReadOnly}
+                                        onClick={() => updateTemplateValue(field.id, boolValue ? 1 : 0)}
+                                        className={`px-3 py-2 rounded-full text-sm font-semibold border transition-colors ${
+                                          Number(currentValue) === (boolValue ? 1 : 0)
+                                            ? "bg-primary text-white border-primary"
+                                            : "bg-secondary/70 text-foreground border-border hover:bg-secondary"
+                                        } ${isReadOnly ? "opacity-60 cursor-not-allowed" : ""}`}
+                                      >
+                                        {option}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </>
+                            )}
                           </div>
                         );
                       })}
@@ -1395,9 +1544,9 @@ export default function CompanyFeedbackForm() {
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
                       <h2 className="text-lg font-bold text-foreground mb-5">Section 10: Final Evaluation</h2>
                       <div className="space-y-4">
-                        <Label className="font-semibold">Hiring Recommendation</Label>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            {["Highly Recommended", "Recommended", "Consider with Improvement", "Not Recommended"].map(
+                        <Label className="font-semibold">Hiring Recommendation (Highly Recommended / Recommended / Consider with Improvement)</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            {["Highly Recommended", "Recommended", "Consider with Improvement"].map(
                             (option) => (
                               <motion.button
                                 key={option}
@@ -1406,17 +1555,14 @@ export default function CompanyFeedbackForm() {
                                 whileTap={{ scale: isReadOnly ? 1 : 0.98 }}
                                 onClick={() => !isReadOnly && updateField("recommendation", option)}
                                 disabled={isReadOnly}
-                                className={`px-4 py-3 rounded-xl font-bold transition-all shadow-sm ${
-                                  currentFeedback.recommendation === option
-                                    ? option === "Highly Recommended"
-                                      ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-emerald-500/50"
-                                      : option === "Recommended"
-                                      ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-blue-500/50"
-                                      : "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-red-500/50"
-                                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                                className={`px-4 py-3 rounded-xl font-bold transition-all duration-200 border ${
+                                  getRecommendationButtonClass(option, currentFeedback.recommendation === option)
                                 } ${isReadOnly ? "opacity-75 cursor-not-allowed" : ""}`}
                               >
-                                {option}
+                                <span className="flex items-center justify-center gap-2">
+                                  {currentFeedback.recommendation === option ? <CheckCircle2 className="w-4 h-4" /> : null}
+                                  {option}
+                                </span>
                               </motion.button>
                             )
                           )}

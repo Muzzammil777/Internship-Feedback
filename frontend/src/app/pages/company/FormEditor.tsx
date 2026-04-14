@@ -59,7 +59,7 @@ export default function CompanyFormEditor() {
     { id: "21", label: "Difficulty Level of Tasks (Basic / Intermediate / Advanced)", type: "text", required: true },
     { id: "22", label: "Key Strengths", type: "text", required: true },
     { id: "23", label: "Areas for Improvement", type: "text", required: true },
-    { id: "24", label: "Hiring Recommendation (Highly Recommended / Recommended / Consider with Improvement / Not Recommended)", type: "text", required: true },
+    { id: "24", label: "Hiring Recommendation (Highly Recommended / Recommended / Consider with Improvement)", type: "enum", required: true, options: ["Highly Recommended", "Recommended", "Consider with Improvement"] },
   ]);
 
   // Student → Company Feedback Form (Students evaluate company)
@@ -554,16 +554,17 @@ export default function CompanyFormEditor() {
                       </div>
                     )}
                     {field.type === "enum" && (
-                      <Select defaultValue={field.options?.[0] ?? ""}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Choose an option" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(field.options ?? ["easy", "moderate", "difficult"]).map((option) => (
-                            <SelectItem key={option} value={option}>{option}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <div className="flex flex-wrap gap-2">
+                        {(field.options ?? ["easy", "moderate", "difficult"]).map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            className="px-3 py-2 rounded-lg border border-border bg-secondary/40 text-sm font-semibold hover:bg-secondary transition-colors"
+                          >
+                            {option}
+                          </button>
+                        ))}
+                      </div>
                     )}
                   </motion.div>
                 ))}
