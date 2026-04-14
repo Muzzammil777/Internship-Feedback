@@ -20,6 +20,7 @@ import {
   Mail,
   Lock,
   CheckCircle2,
+  Trash2,
 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -35,6 +36,7 @@ interface Student {
   name: string;
   email: string;
   phone: string;
+  profilePhoto?: string;
   COLLEGE: string;
   Role: string;
   supervisor: string;
@@ -47,6 +49,10 @@ interface Student {
   status: "active" | "completed" | "pending";
 }
 
+interface CompanyFeedbackRecord {
+  studentId: string;
+}
+
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
 
 export default function CompanyStudentDetails() {
@@ -56,6 +62,7 @@ export default function CompanyStudentDetails() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [apiError, setApiError] = useState("");
+  const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
 
@@ -72,11 +79,30 @@ export default function CompanyStudentDetails() {
     const fetchStudents = async () => {
       setIsLoadingStudents(true);
       try {
-        const res = await fetch(`${API_BASE}/students`);
-        if (res.ok) {
-          const data = await res.json() as Student[];
-          setStudents(data);
+        const [studentsResponse, feedbackResponse] = await Promise.all([
+          fetch(`${API_BASE}/students`),
+          fetch(`${API_BASE}/feedback/company`),
+        ]);
+
+        if (!studentsResponse.ok) {
+          return;
         }
+
+        const data = (await studentsResponse.json()) as Student[];
+        if (!feedbackResponse.ok) {
+          setStudents(data);
+          return;
+        }
+
+        const feedbackRecords = (await feedbackResponse.json()) as CompanyFeedbackRecord[];
+        const completedStudentIds = new Set(feedbackRecords.map((record) => record.studentId));
+
+        const normalizedStudents = data.map((student) => ({
+          ...student,
+          status: completedStudentIds.has(student.id) ? "completed" : student.status,
+        }));
+
+        setStudents(normalizedStudents);
       } catch {
         // silently fall back to empty list
       } finally {
@@ -151,6 +177,42 @@ export default function CompanyStudentDetails() {
       Role: "",
       COLLEGE: "",
     });
+  };
+
+  const handleDeleteStudent = async () => {
+    if (!selectedStudent || isDeletingStudent) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Remove ${selectedStudent.name}? This action cannot be undone.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsDeletingStudent(true);
+    setApiError("");
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/students/${encodeURIComponent(selectedStudent.id)}`,
+        { method: "DELETE" }
+      );
+
+      if (!response.ok) {
+        const errorPayload = (await response.json()) as { detail?: string };
+        throw new Error(errorPayload.detail ?? "Failed to remove student");
+      }
+
+      const deletedId = selectedStudent.id;
+      setStudents((prev) => prev.filter((student) => student.id !== deletedId));
+      setSelectedStudent(null);
+    } catch (error) {
+      setApiError(error instanceof Error ? error.message : "Unable to remove student right now.");
+    } finally {
+      setIsDeletingStudent(false);
+    }
   };
 
   const InfoSection = ({
@@ -290,6 +352,7 @@ export default function CompanyStudentDetails() {
                           size="lg"
                           gradient={gradient}
                           withRing={true}
+                          photoUrl={student.profilePhoto}
                         />
                       </div>
 
@@ -631,14 +694,31 @@ export default function CompanyStudentDetails() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <Button
-              variant="ghost"
-              onClick={() => setSelectedStudent(null)}
-              className="mb-6 -ml-2 hover:bg-primary/10"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Student List
-            </Button>
+            <div className="mb-6 flex items-center justify-between gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => setSelectedStudent(null)}
+                className="-ml-2 hover:bg-primary/10"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Student List
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteStudent}
+                disabled={isDeletingStudent}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeletingStudent ? "Removing..." : "Remove Student"}
+              </Button>
+            </div>
+
+            {apiError && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-xl p-3 text-sm text-red-700">
+                {apiError}
+              </div>
+            )}
 
             {/* Profile Header Section */}
             <div className="bg-card border border-border rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl">
@@ -646,15 +726,23 @@ export default function CompanyStudentDetails() {
                 {/* LEFT - Large Student Photo */}
                 <div className="flex-shrink-0">
                   <div className="relative">
-                    <div className={`w-32 h-32 rounded-2xl bg-gradient-to-br ${gradient} shadow-2xl flex items-center justify-center ring-4 ring-white`}>
-                      <span className="text-5xl font-bold text-white">
-                        {selectedStudent.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()}
-                      </span>
-                    </div>
+                    {selectedStudent.profilePhoto ? (
+                      <img
+                        src={selectedStudent.profilePhoto}
+                        alt={`${selectedStudent.name} profile`}
+                        className="w-32 h-32 rounded-2xl object-cover shadow-2xl ring-4 ring-white"
+                      />
+                    ) : (
+                      <div className={`w-32 h-32 rounded-2xl bg-gradient-to-br ${gradient} shadow-2xl flex items-center justify-center ring-4 ring-white`}>
+                        <span className="text-5xl font-bold text-white">
+                          {selectedStudent.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")
+                            .toUpperCase()}
+                        </span>
+                      </div>
+                    )}
                     {/* Status badge on photo */}
                     <div className={`absolute -bottom-2 -right-2 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-white shadow-lg ${statusColors[selectedStudent.status]}`}>
                       {selectedStudent.status.charAt(0).toUpperCase() +

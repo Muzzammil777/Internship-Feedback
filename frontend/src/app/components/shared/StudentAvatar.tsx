@@ -5,6 +5,7 @@ interface StudentAvatarProps {
   size?: "sm" | "md" | "lg" | "xl";
   gradient: string;
   withRing?: boolean;
+  photoUrl?: string | null;
 }
 
 export default function StudentAvatar({
@@ -12,6 +13,7 @@ export default function StudentAvatar({
   size = "md",
   gradient,
   withRing = false,
+  photoUrl,
 }: StudentAvatarProps) {
   const initials = name
     .split(" ")
@@ -37,7 +39,15 @@ export default function StudentAvatar({
         whileHover={withRing ? { scale: 1.05 } : {}}
         className={`relative ${sizeClasses[size]} rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-xl`}
       >
-        <span className="font-bold text-white">{initials}</span>
+        {photoUrl ? (
+          <img
+            src={photoUrl}
+            alt={`${name} profile`}
+            className="h-full w-full rounded-full object-cover"
+          />
+        ) : (
+          <span className="font-bold text-white">{initials}</span>
+        )}
       </motion.div>
     </div>
   );

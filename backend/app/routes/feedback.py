@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, Optional
 from uuid import uuid4
 
+from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Query, Request
 from pydantic import BaseModel, Field
 
@@ -13,18 +14,29 @@ _student_feedback_store: Dict[str, Dict[str, Any]] = {}
 
 
 class CompanyRatings(BaseModel):
-    technical: int = Field(ge=1, le=5)
-    quality: int = Field(ge=1, le=5)
-    communication: int = Field(ge=1, le=5)
-    teamwork: int = Field(ge=1, le=5)
-    problemSolving: int = Field(ge=1, le=5)
-    initiative: int = Field(ge=1, le=5)
-    professionalism: int = Field(ge=1, le=5)
-    learning: int = Field(ge=1, le=5)
+    technicalKnowledge: int = Field(ge=1, le=5)
+    codeQualityImplementation: int = Field(ge=1, le=5)
+    taskCompletion: int = Field(ge=1, le=5)
+    productivity: int = Field(ge=1, le=5)
+    attentionToDetail: int = Field(ge=1, le=5)
+    communicationClarity: int = Field(ge=1, le=5)
+    reportingUpdates: int = Field(ge=1, le=5)
+    punctuality: int = Field(ge=1, le=5)
+    responsibility: int = Field(ge=1, le=5)
+    discipline: int = Field(ge=1, le=5)
+    collaboration: int = Field(ge=1, le=5)
+    adaptability: int = Field(ge=1, le=5)
+    opennessToFeedback: int = Field(ge=1, le=5)
+    learningAbility: int = Field(ge=1, le=5)
+    skillImprovement: int = Field(ge=1, le=5)
+    initiativeToLearnNewThings: int = Field(ge=1, le=5)
+    contributionToTeamProject: int = Field(ge=1, le=5)
+    ownershipOfTasks: int = Field(ge=1, le=5)
 
 
 class CompanyFeedbackCreate(BaseModel):
     studentId: str
+    studentEmail: str = ""
     studentName: str
     role: str
     college: str
@@ -32,6 +44,8 @@ class CompanyFeedbackCreate(BaseModel):
     duration: str
     startDate: str
     endDate: str
+    typeOfWorkHandled: str = ""
+    difficultyLevel: str = "Intermediate"
     overallRating: int = Field(ge=1, le=5)
     ratings: CompanyRatings
     strengths: str = ""
@@ -88,6 +102,25 @@ async def save_company_feedback(request: Request, payload: CompanyFeedbackCreate
 
     collection = get_collection("company_feedback")
     await collection.update_one({"studentId": payload.studentId}, {"$set": document}, upsert=True)
+
+    # Mark student workflow as completed once company feedback exists.
+    try:
+        students_collection = get_collection("students")
+        student_object_id = ObjectId(payload.studentId)
+        update_result = await students_collection.update_one(
+            {"_id": student_object_id},
+            {"$set": {"status": "completed"}},
+        )
+
+        if update_result.matched_count == 0 and payload.studentEmail:
+            await students_collection.update_one(
+                {"email": payload.studentEmail},
+                {"$set": {"status": "completed"}},
+            )
+    except Exception:
+        # Keep feedback save successful even if status update cannot be applied.
+        pass
+
     saved = await collection.find_one({"studentId": payload.studentId})
     if saved is None:
         raise HTTPException(status_code=500, detail="Unable to save company feedback")

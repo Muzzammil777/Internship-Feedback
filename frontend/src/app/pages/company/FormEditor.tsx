@@ -1,5 +1,5 @@
 import { motion, AnimatePresence, Reorder } from "motion/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -21,15 +21,44 @@ interface FormField {
 
 type FormType = "companyToStudent" | "studentToCompany";
 
+interface FormTemplate {
+  id: string;
+  name: string;
+  formType: FormType;
+  fields: FormField[];
+}
+
+const TEMPLATE_STORAGE_KEY = "company-form-templates";
+
 export default function CompanyFormEditor() {
   const [activeFormType, setActiveFormType] = useState<FormType>("companyToStudent");
 
   // Company → Student Feedback Form (Company evaluates students)
   const [companyToStudentFields, setCompanyToStudentFields] = useState<FormField[]>([
-    { id: "1", label: "Technical Skills", type: "slider", required: true },
-    { id: "2", label: "Work Quality", type: "slider", required: true },
-    { id: "3", label: "Communication", type: "slider", required: true },
-    { id: "4", label: "Teamwork", type: "slider", required: true },
+    { id: "1", label: "Overall Performance", type: "rating", required: true },
+    { id: "2", label: "Technical Knowledge", type: "slider", required: true },
+    { id: "3", label: "Code Quality / Implementation", type: "slider", required: true },
+    { id: "4", label: "Task Completion", type: "slider", required: true },
+    { id: "5", label: "Productivity", type: "slider", required: true },
+    { id: "6", label: "Attention to Detail", type: "slider", required: true },
+    { id: "7", label: "Communication Clarity", type: "slider", required: true },
+    { id: "8", label: "Reporting / Updates", type: "slider", required: true },
+    { id: "9", label: "Punctuality", type: "slider", required: true },
+    { id: "10", label: "Responsibility", type: "slider", required: true },
+    { id: "11", label: "Discipline", type: "slider", required: true },
+    { id: "12", label: "Collaboration", type: "slider", required: true },
+    { id: "13", label: "Adaptability", type: "slider", required: true },
+    { id: "14", label: "Openness to Feedback", type: "slider", required: true },
+    { id: "15", label: "Learning Ability", type: "slider", required: true },
+    { id: "16", label: "Skill Improvement", type: "slider", required: true },
+    { id: "17", label: "Initiative to Learn New Things", type: "slider", required: true },
+    { id: "18", label: "Contribution to Team/Project", type: "slider", required: true },
+    { id: "19", label: "Ownership of Tasks", type: "slider", required: true },
+    { id: "20", label: "Type of Work Handled", type: "text", required: true },
+    { id: "21", label: "Difficulty Level of Tasks (Basic / Intermediate / Advanced)", type: "text", required: true },
+    { id: "22", label: "Key Strengths", type: "text", required: true },
+    { id: "23", label: "Areas for Improvement", type: "text", required: true },
+    { id: "24", label: "Hiring Recommendation (Highly Recommended / Recommended / Consider with Improvement / Not Recommended)", type: "text", required: true },
   ]);
 
   // Student → Company Feedback Form (Students evaluate company)
@@ -41,10 +70,43 @@ export default function CompanyFormEditor() {
   ]);
 
   const [editingField, setEditingField] = useState<string | null>(null);
+  const [savedTemplates, setSavedTemplates] = useState<FormTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [defaultDrafts, setDefaultDrafts] = useState<{
+    companyToStudent: FormField[];
+    studentToCompany: FormField[];
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(TEMPLATE_STORAGE_KEY);
+      if (!stored) {
+        return;
+      }
+
+      const parsed = JSON.parse(stored) as FormTemplate[];
+      if (Array.isArray(parsed)) {
+        setSavedTemplates(parsed);
+      }
+    } catch {
+      // Ignore malformed local storage payloads and start clean.
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(savedTemplates));
+  }, [savedTemplates]);
 
   // Get current fields based on active form type
   const fields = activeFormType === "companyToStudent" ? companyToStudentFields : studentToCompanyFields;
   const setFields = activeFormType === "companyToStudent" ? setCompanyToStudentFields : setStudentToCompanyFields;
+
+  const cloneFieldsForTemplate = (sourceFields: FormField[]): FormField[] => {
+    return sourceFields.map((field) => ({
+      ...field,
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    }));
+  };
 
   const addField = () => {
     const newField: FormField = {
@@ -67,6 +129,56 @@ export default function CompanyFormEditor() {
         field.id === id ? { ...field, ...updates } : field
       )
     );
+  };
+
+  const handleSaveTemplate = () => {
+    const templateName = window.prompt("Template name", `${activeFormType === "companyToStudent" ? "Company to Student" : "Student to Company"} Template`);
+    if (!templateName || !templateName.trim()) {
+      return;
+    }
+
+    const newTemplate: FormTemplate = {
+      id: `${Date.now()}`,
+      name: templateName.trim(),
+      formType: activeFormType,
+      fields: fields.map((field) => ({ ...field })),
+    };
+
+    setSavedTemplates((previous) => [newTemplate, ...previous]);
+  };
+
+  const handleUseTemplate = (template: FormTemplate) => {
+    const shouldUse = window.confirm("Use this template?");
+    if (!shouldUse) {
+      return;
+    }
+
+    if (!defaultDrafts) {
+      setDefaultDrafts({
+        companyToStudent: companyToStudentFields.map((field) => ({ ...field })),
+        studentToCompany: studentToCompanyFields.map((field) => ({ ...field })),
+      });
+    }
+
+    const preparedFields = cloneFieldsForTemplate(template.fields);
+    setSelectedTemplateId(template.id);
+    setActiveFormType(template.formType);
+    if (template.formType === "companyToStudent") {
+      setCompanyToStudentFields(preparedFields);
+    } else {
+      setStudentToCompanyFields(preparedFields);
+    }
+    setEditingField(null);
+  };
+
+  const handleUseDefault = () => {
+    if (defaultDrafts) {
+      setCompanyToStudentFields(defaultDrafts.companyToStudent.map((field) => ({ ...field })));
+      setStudentToCompanyFields(defaultDrafts.studentToCompany.map((field) => ({ ...field })));
+      setDefaultDrafts(null);
+    }
+    setSelectedTemplateId(null);
+    setEditingField(null);
   };
 
   const getFieldIcon = (type: string) => {
@@ -102,10 +214,48 @@ export default function CompanyFormEditor() {
                   Customize feedback form fields and evaluation criteria
                 </p>
               </div>
-              <Button className="flex items-center gap-2 shadow-lg" size="lg">
+              <Button className="flex items-center gap-2 shadow-lg" size="lg" onClick={handleSaveTemplate}>
                 <Save className="w-4 h-4" />
                 Save Templates
               </Button>
+            </div>
+
+            <div className="mb-5">
+              <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                Form Source
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={handleUseDefault}
+                  className={`px-3 py-1.5 text-xs rounded-full border font-semibold transition-colors ${
+                    selectedTemplateId === null
+                      ? "bg-foreground text-background border-foreground"
+                      : "bg-secondary/70 text-foreground border-border hover:bg-secondary"
+                  }`}
+                >
+                  Default
+                </button>
+                {savedTemplates.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => handleUseTemplate(template)}
+                    className={`px-3 py-1.5 text-xs rounded-full border font-semibold transition-colors ${
+                      selectedTemplateId === template.id
+                        ? "bg-primary text-white border-primary"
+                        : template.formType === "companyToStudent"
+                        ? "bg-primary/10 text-primary border-primary/20 hover:bg-primary/20"
+                        : "bg-teal-500/10 text-teal-700 border-teal-500/20 hover:bg-teal-500/20"
+                    }`}
+                  >
+                    {template.name}
+                  </button>
+                ))}
+                {savedTemplates.length === 0 && (
+                  <span className="text-sm text-muted-foreground">No templates saved yet.</span>
+                )}
+              </div>
             </div>
 
             {/* Form Type Toggle */}

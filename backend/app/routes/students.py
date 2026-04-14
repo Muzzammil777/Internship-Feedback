@@ -2,6 +2,7 @@
 
 import logging
 from fastapi import APIRouter, HTTPException
+from bson import ObjectId
 from pydantic import BaseModel, EmailStr
 from pymongo.errors import PyMongoError
 
@@ -31,6 +32,7 @@ class UpdateStudentProfileRequest(BaseModel):
     name: str
     email: EmailStr
     phone: str = ""
+    profilePhoto: str = ""
     role_title: str = ""
     college: str = ""
     startDate: str = ""
@@ -48,6 +50,7 @@ def _serialize(doc: dict) -> dict:
     # Ensure UI-expected fields exist
     doc.setdefault("tasks", [])
     doc.setdefault("skills", [])
+    doc.setdefault("profilePhoto", "")
     doc.setdefault("role_title", "")
     doc.setdefault("college", "")
     doc.setdefault("status", "pending")
@@ -107,6 +110,7 @@ async def create_student(payload: CreateStudentRequest) -> dict:
         "name": payload.name,
         "email": payload.email,
         "password": payload.password,
+        "profilePhoto": "",
         "role_title": payload.role_title,
         "college": payload.college,
         "status": "pending",
@@ -153,6 +157,8 @@ async def update_student_profile(email: str, payload: UpdateStudentProfileReques
         "name": payload.name,
         "email": payload.email,
         "phone": payload.phone,
+        "profilePhoto": payload.profilePhoto,
+        "status": existing.get("status", "pending"),
         "role_title": payload.role_title,
         "college": payload.college,
         "startDate": payload.startDate,
@@ -179,3 +185,29 @@ async def update_student_profile(email: str, payload: UpdateStudentProfileReques
 
     updated = await db["students"].find_one({"_id": existing["_id"]})
     return _serialize(updated)
+
+
+@router.delete("/{student_id}")
+async def delete_student(student_id: str) -> dict:
+    db = get_database()
+
+    try:
+        student_object_id = ObjectId(student_id)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Invalid student id") from exc
+
+    existing = await db["students"].find_one({"_id": student_object_id})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    try:
+        await db["students"].delete_one({"_id": student_object_id})
+
+        student_email = existing.get("email")
+        if student_email:
+            await db["users"].delete_one({"email": student_email, "role": "student"})
+
+        return {"message": "Student deleted successfully", "id": student_id}
+    except PyMongoError as exc:
+        logger.error("Failed to delete student %s: %s", student_id, exc)
+        raise HTTPException(status_code=500, detail="Failed to delete student") from exc

@@ -6,7 +6,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import SkillTag from "../../components/shared/SkillTag";
 import { useAuth } from "../../context/AuthContext";
-import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X } from "lucide-react";
+import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2 } from "lucide-react";
 
 interface Task {
   id: string;
@@ -59,6 +59,7 @@ export default function StudentProfile() {
             supervisor: data.supervisor || "",
             supervisorEmail: data.supervisorEmail || "",
           });
+          setProfilePhoto(data.profilePhoto || null);
           setSkills(data.skills || []);
           setTasks(data.tasks || []);
         }
@@ -86,11 +87,37 @@ export default function StudentProfile() {
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        setSaveError("Please choose an image file.");
+        return;
+      }
+
+      const maxFileSizeBytes = 2 * 1024 * 1024;
+      if (file.size > maxFileSizeBytes) {
+        setSaveError("Please upload an image smaller than 2MB.");
+        return;
+      }
+
+      setSaveError("");
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhoto(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePhoto = () => {
+    const confirmed = window.confirm("Remove your profile photo? This will clear the current photo.");
+    if (!confirmed) {
+      return;
+    }
+
+    setProfilePhoto(null);
+    setSaveError("");
+    setSaveMessage("Photo removed. Click Save Changes to persist.");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   };
 
@@ -139,6 +166,7 @@ export default function StudentProfile() {
           name: formData.name,
           email: formData.email,
           phone: formData.phone,
+          profilePhoto: profilePhoto || "",
           role_title: formData.Role,
           college: formData.COLLEGE,
           startDate: formData.startDate,
@@ -257,6 +285,17 @@ export default function StudentProfile() {
                       Active
                     </div>
                   </div>
+                  {profilePhoto && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleRemovePhoto}
+                      className="w-full mt-4 flex items-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Remove Photo
+                    </Button>
+                  )}
                 </div>
 
                 {/* RIGHT - Student Information */}
