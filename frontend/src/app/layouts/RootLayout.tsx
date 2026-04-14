@@ -25,7 +25,7 @@ export default function RootLayout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const currentRole = user?.role || "student";
+  const currentRole = user?.role ?? (location.pathname.startsWith("/company") ? "company" : "student");
 
   const studentNav = [
     { path: "/student/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -182,7 +182,7 @@ export default function RootLayout() {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="fixed inset-0 flex overflow-hidden bg-background">
       {/* Mobile Header Bar */}
       <div className="fixed top-0 left-0 right-0 z-40 md:hidden bg-card border-b border-border px-4 py-3 flex items-center justify-between shadow-sm">
         <button
@@ -251,7 +251,7 @@ export default function RootLayout() {
       </motion.aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto pt-14 md:pt-0">
+      <main className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden pt-14 md:pt-0">
         <motion.div
           key={location.pathname}
           initial={{ opacity: 0, y: 10 }}

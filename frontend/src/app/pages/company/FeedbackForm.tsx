@@ -539,7 +539,7 @@ export default function CompanyFeedbackForm() {
   );
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-background overflow-hidden">
+    <div className="flex flex-col md:flex-row min-h-full bg-background">
       {/* LEFT PANEL - Student List */}
       <motion.div
         initial={{ x: -20, opacity: 0 }}
@@ -583,7 +583,7 @@ export default function CompanyFeedbackForm() {
         </div>
 
         {/* Student List */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div className="flex-1 p-4 space-y-2">
           <AnimatePresence mode="popLayout">
             {filteredStudents.map((student, index) => {
               const isSelected = student.id === selectedStudentId;
@@ -692,7 +692,7 @@ export default function CompanyFeedbackForm() {
       </div>
 
       {/* RIGHT PANEL - Feedback Form */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1">
         {isLoadingStudents ? (
           <div className="h-full flex items-center justify-center">
             <p className="text-muted-foreground">Loading students...</p>
@@ -758,7 +758,7 @@ export default function CompanyFeedbackForm() {
             >
               {/* Student Profile Header */}
               <div className="mb-6 sm:mb-8 bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 rounded-xl sm:rounded-2xl p-4 sm:p-8 border border-border shadow-md">
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+                <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
                   <StudentAvatar
                     name={selectedStudent.name}
                     size="xl"
@@ -771,15 +771,15 @@ export default function CompanyFeedbackForm() {
                     withRing={true}
                     photoUrl={selectedStudent.profilePhoto}
                   />
-                  <div className="flex-1 w-full text-center sm:text-left">
-                    <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4 mb-4">
-                      <div>
-                        <h1 className="text-xl sm:text-3xl font-bold text-foreground mb-2">
+                  <div className="flex-1 w-full text-left">
+                    <div className="flex flex-col sm:flex-row items-start justify-between gap-3 mb-4">
+                      <div className="min-w-0 w-full">
+                        <h1 className="text-lg sm:text-3xl font-bold text-foreground mb-2 break-words leading-tight">
                           {selectedStudent.name}
                         </h1>
-                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-3">
+                        <div className="flex items-center justify-start gap-2 mb-3">
                           <Building2 className="w-4 h-4 text-primary" />
-                          <span className="font-semibold text-foreground">
+                          <span className="font-semibold text-foreground break-words leading-tight">
                             {selectedStudent.Role}
                           </span>
                         </div>
@@ -815,25 +815,25 @@ export default function CompanyFeedbackForm() {
                         </div>
                       )}
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div className="flex items-start gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="flex items-start gap-3 min-w-0">
                         <div className="mt-0.5 p-1.5 bg-purple-100 rounded-md">
                           <Briefcase className="w-4 h-4 text-purple-600" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Project</p>
-                          <p className="text-sm font-bold text-foreground">
+                          <p className="text-sm font-bold text-foreground break-words leading-tight">
                             {selectedStudent.projectTitle}
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-3 min-w-0">
                         <div className="mt-0.5 p-1.5 bg-emerald-100 rounded-md">
                           <Calendar className="w-4 h-4 text-emerald-600" />
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Duration</p>
-                          <p className="text-sm font-bold text-foreground">
+                          <p className="text-sm font-bold text-foreground break-words leading-tight">
                             {selectedStudent.duration}
                           </p>
                         </div>

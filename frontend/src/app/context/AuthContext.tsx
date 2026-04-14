@@ -22,6 +22,34 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_USER_STORAGE_KEY = "movicloud-auth-user";
+
+function readStoredUser(): User | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.localStorage.getItem(AUTH_USER_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<User>;
+    if (
+      typeof parsed.email === "string" &&
+      typeof parsed.name === "string" &&
+      (parsed.role === "student" || parsed.role === "company")
+    ) {
+      return { email: parsed.email, name: parsed.name, role: parsed.role };
+    }
+  } catch {
+    // Ignore malformed storage payload and clear below.
+  }
+
+  window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+  return null;
+}
 
 export const DEMO_USERS = {
   student: {
@@ -39,7 +67,7 @@ export const DEMO_USERS = {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => readStoredUser());
 
   const login = async (
     email: string,
@@ -71,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role,
       };
       setUser(loggedInUser);
+      window.localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(loggedInUser));
       return { user: loggedInUser };
     } catch {
       return { user: null, error: "invalid_credentials" };
@@ -79,6 +108,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    }
   };
 
   return (
