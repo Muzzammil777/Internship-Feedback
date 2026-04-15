@@ -100,7 +100,11 @@ export default function CompanyStudentDetails() {
 
         const normalizedStudents = data.map((student) => ({
           ...student,
-          status: completedStudentIds.has(student.id) ? "completed" : student.status,
+          status: completedStudentIds.has(student.id)
+            ? "completed"
+            : student.status === "active"
+              ? "active"
+              : "pending",
         }));
 
         setStudents(normalizedStudents);

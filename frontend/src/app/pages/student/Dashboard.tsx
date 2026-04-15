@@ -16,8 +16,12 @@ interface StudentProfile {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   Role: string;
   COLLEGE: string;
+  COLLEGE_DEPARTMENT?: string;
+  supervisor?: string;
+  supervisorEmail?: string;
   status: string;
   skills: string[];
   tasks: any[];
@@ -97,6 +101,27 @@ export default function StudentDashboard() {
   const displayRole = profile?.Role || "Intern";
   const displayCollege = profile?.COLLEGE || "University";
   const skills = profile?.skills ?? [];
+  const hasTaskDetails = (profile?.tasks ?? []).some((task) => {
+    const title = typeof task?.title === "string" ? task.title.trim() : "";
+    const description = typeof task?.description === "string" ? task.description.trim() : "";
+    return Boolean(title && description);
+  });
+
+  const isProfileComplete = Boolean(
+    profile &&
+      profile.name?.trim() &&
+      profile.email?.trim() &&
+      profile.Role?.trim() &&
+      profile.COLLEGE?.trim() &&
+      profile.COLLEGE_DEPARTMENT?.trim() &&
+      profile.startDate?.trim() &&
+      profile.endDate?.trim() &&
+      profile.duration?.trim() &&
+      profile.duration !== "N/A" &&
+      profile.supervisor?.trim() &&
+      profile.supervisorEmail?.trim() &&
+      hasTaskDetails
+  );
 
   return (
     <div className="min-h-full bg-background">
@@ -136,10 +161,10 @@ export default function StudentDashboard() {
         >
           <StatusCard
             title="Profile Status"
-            value={profile?.status === "completed" ? "Complete" : "In Progress"}
-            description={profile?.status === "completed" ? "All details filled" : "Awaiting completion"}
+            value={isProfileComplete ? "Completed" : "In Progress"}
+            description={isProfileComplete ? "All details filled" : "Awaiting completion"}
             icon={CheckCircle2}
-            color={profile?.status === "completed" ? "success" : "warning"}
+            color={isProfileComplete ? "success" : "warning"}
           />
           <StatusCard
             title="Feedback Status"

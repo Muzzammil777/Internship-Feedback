@@ -59,7 +59,7 @@ export const DEMO_USERS = {
     name: "Alex Johnson",
   },
   company: {
-    email: "admin@example.com",
+    email: "admin@internfeedback.com",
     password: "123456",
     role: "company" as const,
     name: "Company Admin",
