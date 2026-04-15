@@ -38,6 +38,7 @@ interface Student {
   phone: string;
   profilePhoto?: string;
   COLLEGE: string;
+  COLLEGE_DEPARTMENT?: string;
   Role: string;
   supervisor: string;
   supervisorEmail: string;
@@ -118,7 +119,8 @@ export default function CompanyStudentDetails() {
     (student) =>
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.Role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      student.COLLEGE.toLowerCase().includes(searchQuery.toLowerCase())
+      student.COLLEGE.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (student.COLLEGE_DEPARTMENT || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const statusColors = {
@@ -380,6 +382,9 @@ export default function CompanyStudentDetails() {
                           </p>
                           <p className="text-sm text-muted-foreground">
                             {student.COLLEGE}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Department: {student.COLLEGE_DEPARTMENT || "N/A"}
                           </p>
                         </div>
 
@@ -733,10 +738,12 @@ export default function CompanyStudentDetails() {
                         className="w-32 h-32 rounded-2xl object-cover shadow-2xl ring-4 ring-white"
                       />
                     ) : (
-                      <div className={`w-32 h-32 rounded-2xl bg-gradient-to-br ${gradient} shadow-2xl flex items-center justify-center ring-4 ring-white`}>
-                        <span className="text-5xl font-bold text-white">
+                      <div className={`w-32 h-32 rounded-2xl overflow-hidden bg-gradient-to-br ${gradient} shadow-2xl flex items-center justify-center ring-4 ring-white`}>
+                        <span className="text-4xl font-bold leading-none tracking-tight text-white text-center select-none">
                           {selectedStudent.name
                             .split(" ")
+                            .filter(Boolean)
+                            .slice(0, 2)
                             .map((n) => n[0])
                             .join("")
                             .toUpperCase()}
@@ -773,9 +780,10 @@ export default function CompanyStudentDetails() {
                     <div className="p-2 bg-accent/10 rounded-lg">
                       <GraduationCap className="w-5 h-5 text-accent" />
                     </div>
-                    <span className="text-base text-muted-foreground font-medium">
-                      {selectedStudent.COLLEGE}
-                    </span>
+                    <div className="min-w-0">
+                      <p className="text-base text-muted-foreground font-medium break-words">{selectedStudent.COLLEGE}</p>
+                      <p className="text-sm text-muted-foreground/90 break-words">Department: {selectedStudent.COLLEGE_DEPARTMENT || "N/A"}</p>
+                    </div>
                   </div>
 
                   {/* Quick Info Row */}
@@ -875,6 +883,14 @@ export default function CompanyStudentDetails() {
                   </span>
                   <div className="text-base font-semibold text-foreground">
                     {selectedStudent.COLLEGE}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    COLLEGE DEPARTMENT
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.COLLEGE_DEPARTMENT || "N/A"}
                   </div>
                 </div>
               </div>

@@ -20,6 +20,7 @@ class CreateStudentRequest(BaseModel):
     password: str
     role_title: str = ""   # internship role / department (e.g. "Engineering - Frontend")
     college: str = ""
+    college_department: str = ""
 
 
 class TaskPayload(BaseModel):
@@ -35,6 +36,7 @@ class UpdateStudentProfileRequest(BaseModel):
     profilePhoto: str = ""
     role_title: str = ""
     college: str = ""
+    college_department: str = ""
     startDate: str = ""
     endDate: str = ""
     duration: str = ""
@@ -53,10 +55,12 @@ def _serialize(doc: dict) -> dict:
     doc.setdefault("profilePhoto", "")
     doc.setdefault("role_title", "")
     doc.setdefault("college", "")
+    doc.setdefault("college_department", "")
     doc.setdefault("status", "pending")
     # Mapping backend role_title to frontend Role and college to COLLEGE for consistency
     doc["Role"] = doc.get("role_title", "")
     doc["COLLEGE"] = doc.get("college", "")
+    doc["COLLEGE_DEPARTMENT"] = doc.get("college_department", "")
     return doc
 
 
@@ -113,6 +117,7 @@ async def create_student(payload: CreateStudentRequest) -> dict:
         "profilePhoto": "",
         "role_title": payload.role_title,
         "college": payload.college,
+        "college_department": payload.college_department,
         "status": "pending",
         "tasks": [],
         "skills": [],
@@ -161,6 +166,7 @@ async def update_student_profile(email: str, payload: UpdateStudentProfileReques
         "status": existing.get("status", "pending"),
         "role_title": payload.role_title,
         "college": payload.college,
+        "college_department": payload.college_department,
         "startDate": payload.startDate,
         "endDate": payload.endDate,
         "duration": payload.duration,

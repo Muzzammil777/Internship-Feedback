@@ -23,6 +23,7 @@ import {
   Building2,
   Briefcase,
   Calendar,
+  GraduationCap,
   SquarePen,
   MessageSquare,
 } from "lucide-react";
@@ -33,6 +34,7 @@ interface Student {
   name: string;
   Role: string;
   COLLEGE: string;
+  COLLEGE_DEPARTMENT?: string;
   projectTitle: string;
   duration: string;
   startDate: string;
@@ -46,6 +48,7 @@ interface BackendStudent {
   name: string;
   Role?: string;
   COLLEGE?: string;
+  COLLEGE_DEPARTMENT?: string;
   duration?: string;
   startDate?: string;
   endDate?: string;
@@ -297,6 +300,7 @@ export default function CompanyFeedbackForm() {
           name: student.name,
           Role: student.Role || "Intern",
           COLLEGE: student.COLLEGE || "College",
+          COLLEGE_DEPARTMENT: student.COLLEGE_DEPARTMENT || "",
           projectTitle: student.tasks?.[0]?.title || "Internship Project",
           duration: student.duration || "N/A",
           startDate: student.startDate || "",
@@ -1042,6 +1046,17 @@ export default function CompanyFeedbackForm() {
                           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Project</p>
                           <p className="text-sm font-bold text-foreground break-words leading-tight">
                             {selectedStudent.projectTitle}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className="mt-0.5 p-1.5 bg-blue-100 rounded-md">
+                          <GraduationCap className="w-4 h-4 text-blue-600" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Department</p>
+                          <p className="text-sm font-bold text-foreground break-words leading-tight">
+                            {selectedStudent.COLLEGE_DEPARTMENT || "N/A"}
                           </p>
                         </div>
                       </div>

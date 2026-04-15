@@ -17,15 +17,17 @@ export default function StudentAvatar({
 }: StudentAvatarProps) {
   const initials = name
     .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
     .map((n) => n[0])
     .join("")
     .toUpperCase();
 
   const sizeClasses = {
-    sm: "w-12 h-12 text-lg",
-    md: "w-16 h-16 text-xl",
-    lg: "w-24 h-24 text-3xl",
-    xl: "w-32 h-32 text-4xl",
+    sm: "w-12 h-12 text-base",
+    md: "w-16 h-16 text-lg",
+    lg: "w-24 h-24 text-2xl",
+    xl: "w-32 h-32 text-3xl",
   };
 
   return (
@@ -37,7 +39,7 @@ export default function StudentAvatar({
       )}
       <motion.div
         whileHover={withRing ? { scale: 1.05 } : {}}
-        className={`relative ${sizeClasses[size]} rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center shadow-xl`}
+        className={`relative ${sizeClasses[size]} rounded-full overflow-hidden bg-gradient-to-br ${gradient} flex items-center justify-center shadow-xl`}
       >
         {photoUrl ? (
           <img
@@ -46,7 +48,7 @@ export default function StudentAvatar({
             className="h-full w-full rounded-full object-cover"
           />
         ) : (
-          <span className="font-bold text-white">{initials}</span>
+          <span className="font-bold leading-none tracking-tight text-white text-center select-none">{initials}</span>
         )}
       </motion.div>
     </div>

@@ -31,6 +31,7 @@ export default function StudentProfile() {
     email: "",
     phone: "",
     COLLEGE: "",
+    COLLEGE_DEPARTMENT: "",
     Role: "",
     startDate: "",
     endDate: "",
@@ -53,6 +54,7 @@ export default function StudentProfile() {
             email: data.email || "",
             phone: data.phone || "",
             COLLEGE: data.COLLEGE || "",
+            COLLEGE_DEPARTMENT: data.COLLEGE_DEPARTMENT || "",
             Role: data.Role || "",
             startDate: data.startDate || "",
             endDate: data.endDate || "",
@@ -169,6 +171,7 @@ export default function StudentProfile() {
           profilePhoto: profilePhoto || "",
           role_title: formData.Role,
           college: formData.COLLEGE,
+          college_department: formData.COLLEGE_DEPARTMENT,
           startDate: formData.startDate,
           endDate: formData.endDate,
           duration: calculateDuration(),
@@ -429,6 +432,15 @@ export default function StudentProfile() {
                 <Input
                   value={formData.COLLEGE}
                   onChange={(e) => setFormData({ ...formData, COLLEGE: e.target.value })}
+                  className="font-medium text-base"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">COLLEGE DEPARTMENT</Label>
+                <Input
+                  value={formData.COLLEGE_DEPARTMENT}
+                  onChange={(e) => setFormData({ ...formData, COLLEGE_DEPARTMENT: e.target.value })}
+                  placeholder="e.g., Computer Science and Engineering"
                   className="font-medium text-base"
                 />
               </div>
