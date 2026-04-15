@@ -67,6 +67,21 @@ interface DownloadItem {
   onDownload: () => Promise<void>;
 }
 
+const SYSTEM_META_MARKER = "[SYSTEM_META]";
+
+function stripSystemMetaComment(comment?: string): string {
+  if (!comment) {
+    return "";
+  }
+
+  const markerIndex = comment.indexOf(SYSTEM_META_MARKER);
+  if (markerIndex === -1) {
+    return comment.trim();
+  }
+
+  return comment.slice(0, markerIndex).trim();
+}
+
 export default function StudentDownloads() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const { user } = useAuth();
@@ -235,6 +250,8 @@ export default function StudentDownloads() {
     const doc = new jsPDF();
     await addPdfHeader(doc, "Company Feedback Report", `Generated for ${profile.name}`);
 
+    const cleanedCompanyComments = stripSystemMetaComment(companyFeedback?.comments);
+
     autoTable(doc, {
       startY: 50,
       theme: "grid",
@@ -248,7 +265,7 @@ export default function StudentDownloads() {
         ["Internship Duration", companyFeedback?.duration || profile.duration || "N/A"],
         ["Strengths", companyFeedback?.strengths || "N/A"],
         ["Improvements", companyFeedback?.improvements || "N/A"],
-        ["Additional Comments", companyFeedback?.comments || "N/A"],
+        ["Additional Comments", cleanedCompanyComments || "N/A"],
       ],
       styles: { fontSize: 10, cellPadding: 3 },
       headStyles: { fillColor: [99, 102, 241] },

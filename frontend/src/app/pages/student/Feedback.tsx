@@ -173,6 +173,21 @@ function formatMetricLabel(metricKey: string): string {
   return metricKey.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (v) => v.toUpperCase());
 }
 
+const SYSTEM_META_MARKER = "[SYSTEM_META]";
+
+function stripSystemMetaComment(comment?: string): string {
+  if (!comment) {
+    return "";
+  }
+
+  const markerIndex = comment.indexOf(SYSTEM_META_MARKER);
+  if (markerIndex === -1) {
+    return comment.trim();
+  }
+
+  return comment.slice(0, markerIndex).trim();
+}
+
 export default function StudentFeedback() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const { user } = useAuth();
@@ -247,6 +262,8 @@ export default function StudentFeedback() {
     if (!values.length) return null;
     return Number((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2));
   }, [answers]);
+
+  const companyComments = stripSystemMetaComment(companyFeedback?.comments);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -513,7 +530,7 @@ export default function StudentFeedback() {
                   </div>
                   <h3 className="text-lg font-bold text-foreground">Overall Comments</h3>
                 </div>
-                <p className="text-foreground leading-relaxed">{companyFeedback?.comments || "Awaiting overall comments from supervisor."}</p>
+                <p className="text-foreground leading-relaxed">{companyComments || "Awaiting overall comments from supervisor."}</p>
               </motion.div>
             </div>
 

@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Literal, Optional, Union
 from uuid import uuid4
+import logging
 
 from bson import ObjectId
 from fastapi import APIRouter, HTTPException, Query, Request
@@ -11,6 +12,23 @@ from app.core.database import get_collection
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 _company_feedback_store: Dict[str, Dict[str, Any]] = {}
 _student_feedback_store: Dict[str, Dict[str, Any]] = {}
+logger = logging.getLogger(__name__)
+
+
+async def _ensure_mongodb_ready(request: Request) -> bool:
+    """Probe MongoDB on-demand to avoid relying on stale startup readiness flags."""
+    if getattr(request.app.state, "mongodb_ready", False):
+        return True
+
+    try:
+        database = get_collection("users").database
+        await database.command("ping")
+        request.app.state.mongodb_ready = True
+        return True
+    except Exception as exc:
+        request.app.state.mongodb_ready = False
+        logger.warning("MongoDB ping failed in feedback route; using in-memory fallback: %s", exc)
+        return False
 
 
 class CompanyRatings(BaseModel):
@@ -156,17 +174,26 @@ def _normalize_document(document: Dict[str, Any]) -> Dict[str, Any]:
 
 @router.get("/company")
 async def list_company_feedback(request: Request, student_id: Optional[str] = Query(default=None)):
-    if not getattr(request.app.state, "mongodb_ready", False):
+    if not await _ensure_mongodb_ready(request):
         documents = list(_company_feedback_store.values())
         if student_id is not None:
             documents = [document for document in documents if document["studentId"] == student_id]
         documents.sort(key=lambda document: document.get("createdAt", ""), reverse=True)
         return documents
 
-    collection = get_collection("company_feedback")
-    query = {} if student_id is None else {"studentId": student_id}
-    documents = await collection.find(query).sort("createdAt", -1).to_list(length=100)
-    return [_normalize_document(document) for document in documents]
+    try:
+        collection = get_collection("company_feedback")
+        query = {} if student_id is None else {"studentId": student_id}
+        documents = await collection.find(query).sort("createdAt", -1).to_list(length=100)
+        return [_normalize_document(document) for document in documents]
+    except Exception as exc:
+        request.app.state.mongodb_ready = False
+        logger.warning("MongoDB read failed for company feedback; using in-memory fallback: %s", exc)
+        documents = list(_company_feedback_store.values())
+        if student_id is not None:
+            documents = [document for document in documents if document["studentId"] == student_id]
+        documents.sort(key=lambda document: document.get("createdAt", ""), reverse=True)
+        return documents
 
 
 @router.post("/company", status_code=201)
@@ -174,52 +201,69 @@ async def save_company_feedback(request: Request, payload: CompanyFeedbackCreate
     document = payload.model_dump()
     document["createdAt"] = datetime.now(timezone.utc).isoformat()
 
-    if not getattr(request.app.state, "mongodb_ready", False):
+    if not await _ensure_mongodb_ready(request):
         existing = _company_feedback_store.get(payload.studentId, {})
         document["id"] = existing.get("id", str(uuid4()))
         _company_feedback_store[payload.studentId] = document
         return document
 
-    collection = get_collection("company_feedback")
-    await collection.update_one({"studentId": payload.studentId}, {"$set": document}, upsert=True)
-
-    # Mark student workflow as completed once company feedback exists.
     try:
-        students_collection = get_collection("students")
-        student_object_id = ObjectId(payload.studentId)
-        update_result = await students_collection.update_one(
-            {"_id": student_object_id},
-            {"$set": {"status": "completed"}},
-        )
+        collection = get_collection("company_feedback")
+        await collection.update_one({"studentId": payload.studentId}, {"$set": document}, upsert=True)
 
-        if update_result.matched_count == 0 and payload.studentEmail:
-            await students_collection.update_one(
-                {"email": payload.studentEmail},
+        # Mark student workflow as completed once company feedback exists.
+        try:
+            students_collection = get_collection("students")
+            student_object_id = ObjectId(payload.studentId)
+            update_result = await students_collection.update_one(
+                {"_id": student_object_id},
                 {"$set": {"status": "completed"}},
             )
-    except Exception:
-        # Keep feedback save successful even if status update cannot be applied.
-        pass
 
-    saved = await collection.find_one({"studentId": payload.studentId})
-    if saved is None:
-        raise HTTPException(status_code=500, detail="Unable to save company feedback")
-    return _normalize_document(saved)
+            if update_result.matched_count == 0 and payload.studentEmail:
+                await students_collection.update_one(
+                    {"email": payload.studentEmail},
+                    {"$set": {"status": "completed"}},
+                )
+        except Exception:
+            # Keep feedback save successful even if status update cannot be applied.
+            pass
+
+        saved = await collection.find_one({"studentId": payload.studentId})
+        if saved is None:
+            raise HTTPException(status_code=500, detail="Unable to save company feedback")
+        return _normalize_document(saved)
+    except Exception as exc:
+        request.app.state.mongodb_ready = False
+        logger.warning("MongoDB write failed for company feedback; using in-memory fallback: %s", exc)
+        existing = _company_feedback_store.get(payload.studentId, {})
+        document["id"] = existing.get("id", str(uuid4()))
+        _company_feedback_store[payload.studentId] = document
+        return document
 
 
 @router.get("/student")
 async def list_student_feedback(request: Request, student_email: Optional[str] = Query(default=None)):
-    if not getattr(request.app.state, "mongodb_ready", False):
+    if not await _ensure_mongodb_ready(request):
         documents = list(_student_feedback_store.values())
         if student_email is not None:
             documents = [document for document in documents if document["studentEmail"] == student_email]
         documents.sort(key=lambda document: document.get("createdAt", ""), reverse=True)
         return documents
 
-    collection = get_collection("student_feedback")
-    query = {} if student_email is None else {"studentEmail": student_email}
-    documents = await collection.find(query).sort("createdAt", -1).to_list(length=100)
-    return [_normalize_document(document) for document in documents]
+    try:
+        collection = get_collection("student_feedback")
+        query = {} if student_email is None else {"studentEmail": student_email}
+        documents = await collection.find(query).sort("createdAt", -1).to_list(length=100)
+        return [_normalize_document(document) for document in documents]
+    except Exception as exc:
+        request.app.state.mongodb_ready = False
+        logger.warning("MongoDB read failed for student feedback; using in-memory fallback: %s", exc)
+        documents = list(_student_feedback_store.values())
+        if student_email is not None:
+            documents = [document for document in documents if document["studentEmail"] == student_email]
+        documents.sort(key=lambda document: document.get("createdAt", ""), reverse=True)
+        return documents
 
 
 @router.post("/student", status_code=201)
@@ -250,19 +294,27 @@ async def save_student_feedback(request: Request, payload: StudentFeedbackCreate
         document["overallRating"] = _calculate_legacy_overall(payload)
         document["ratingCount"] = 4
 
-    if not getattr(request.app.state, "mongodb_ready", False):
+    if not await _ensure_mongodb_ready(request):
         existing = _student_feedback_store.get(payload.studentEmail, {})
         document["id"] = existing.get("id", str(uuid4()))
         _student_feedback_store[payload.studentEmail] = document
         return document
 
-    collection = get_collection("student_feedback")
-    await collection.update_one(
-        {"studentEmail": payload.studentEmail},
-        {"$set": document},
-        upsert=True,
-    )
-    saved = await collection.find_one({"studentEmail": payload.studentEmail})
-    if saved is None:
-        raise HTTPException(status_code=500, detail="Unable to save student feedback")
-    return _normalize_document(saved)
+    try:
+        collection = get_collection("student_feedback")
+        await collection.update_one(
+            {"studentEmail": payload.studentEmail},
+            {"$set": document},
+            upsert=True,
+        )
+        saved = await collection.find_one({"studentEmail": payload.studentEmail})
+        if saved is None:
+            raise HTTPException(status_code=500, detail="Unable to save student feedback")
+        return _normalize_document(saved)
+    except Exception as exc:
+        request.app.state.mongodb_ready = False
+        logger.warning("MongoDB write failed for student feedback; using in-memory fallback: %s", exc)
+        existing = _student_feedback_store.get(payload.studentEmail, {})
+        document["id"] = existing.get("id", str(uuid4()))
+        _student_feedback_store[payload.studentEmail] = document
+        return document
