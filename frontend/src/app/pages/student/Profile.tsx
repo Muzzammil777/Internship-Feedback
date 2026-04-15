@@ -436,7 +436,7 @@ export default function StudentProfile() {
                 />
               </div>
               <div className="space-y-2">
-                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">COLLEGE DEPARTMENT</Label>
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">DEPARTMENT</Label>
                 <Input
                   value={formData.COLLEGE_DEPARTMENT}
                   onChange={(e) => setFormData({ ...formData, COLLEGE_DEPARTMENT: e.target.value })}

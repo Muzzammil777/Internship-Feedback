@@ -887,7 +887,7 @@ export default function CompanyStudentDetails() {
                 </div>
                 <div className="space-y-2">
                   <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
-                    COLLEGE DEPARTMENT
+                    DEPARTMENT
                   </span>
                   <div className="text-base font-semibold text-foreground">
                     {selectedStudent.COLLEGE_DEPARTMENT || "N/A"}
