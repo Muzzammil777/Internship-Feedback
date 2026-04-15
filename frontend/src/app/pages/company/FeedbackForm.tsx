@@ -145,14 +145,94 @@ interface StudentSubmittedFeedback {
   studentEmail: string;
   studentName: string;
   companyName: string;
-  learningExperience: number;
-  mentorship: number;
-  workEnvironment: number;
-  communication: number;
-  strengths: string;
-  improvements: string;
-  overallComments: string;
+  learningExperience?: number;
+  mentorship?: number;
+  workEnvironment?: number;
+  communication?: number;
+  strengths?: string;
+  improvements?: string;
+  overallComments?: string;
+  sections?: Array<{
+    sectionId: string;
+    title: string;
+    questions: Array<{
+      questionId: string;
+      label: string;
+      type: "rating" | "boolean" | "enum" | "text";
+      value: number | boolean | string;
+    }>;
+  }>;
 }
+
+const formatStudentAnswerText = (
+  question: NonNullable<StudentSubmittedFeedback["sections"]>[number]["questions"][number]
+): string => {
+  if (question.type === "boolean" && typeof question.value === "boolean") {
+    return question.value ? "Yes" : "No";
+  }
+
+  if (typeof question.value === "string") {
+    return question.value.trim() || "N/A";
+  }
+
+  return String(question.value ?? "N/A");
+};
+
+const STUDENT_METRIC_QUESTION_IDS = {
+  learningExperience: ["overallInternshipExperience", "learningOutcomesSatisfaction"],
+  mentorship: ["mentorGuidance", "teamMentorSupport"],
+  workEnvironment: ["workCulture", "workloadManageable"],
+  communication: ["communicationClear"],
+} as const;
+
+const getFirstNumericRating = (
+  sections: StudentSubmittedFeedback["sections"],
+  questionIds: readonly string[]
+): number | undefined => {
+  if (!sections?.length) {
+    return undefined;
+  }
+
+  for (const section of sections) {
+    for (const question of section.questions) {
+      if (!questionIds.includes(question.questionId)) {
+        continue;
+      }
+      if (question.type !== "rating") {
+        continue;
+      }
+      if (typeof question.value === "number" && Number.isFinite(question.value)) {
+        return question.value;
+      }
+    }
+  }
+
+  return undefined;
+};
+
+const resolveStudentSubmittedFeedback = (
+  feedback: StudentSubmittedFeedback
+): StudentSubmittedFeedback => {
+  if (!feedback.sections?.length) {
+    return feedback;
+  }
+
+  return {
+    ...feedback,
+    learningExperience:
+      feedback.learningExperience ??
+      getFirstNumericRating(feedback.sections, STUDENT_METRIC_QUESTION_IDS.learningExperience),
+    mentorship:
+      feedback.mentorship ??
+      getFirstNumericRating(feedback.sections, STUDENT_METRIC_QUESTION_IDS.mentorship),
+    workEnvironment:
+      feedback.workEnvironment ??
+      getFirstNumericRating(feedback.sections, STUDENT_METRIC_QUESTION_IDS.workEnvironment),
+    communication:
+      feedback.communication ??
+      getFirstNumericRating(feedback.sections, STUDENT_METRIC_QUESTION_IDS.communication),
+  };
+};
 
 const DEFAULT_RATINGS: FeedbackStatus[string]["ratings"] = {
   technicalKnowledge: 3,
@@ -408,7 +488,8 @@ export default function CompanyFeedbackForm() {
         }
 
         const records = (await response.json()) as StudentSubmittedFeedback[];
-        setStudentSubmittedFeedback(records[0] ?? null);
+        const latestRecord = records[0] ? resolveStudentSubmittedFeedback(records[0]) : null;
+        setStudentSubmittedFeedback(latestRecord);
       } catch {
         setStudentSubmittedFeedback(null);
       } finally {
@@ -1102,45 +1183,104 @@ export default function CompanyFeedbackForm() {
                   ) : studentSubmittedFeedback ? (
                     showStudentSubmittedFeedback ? (
                       <div className="space-y-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Learning Experience</p>
-                            <p className="font-bold text-foreground">{studentSubmittedFeedback.learningExperience}/5</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Mentorship</p>
-                            <p className="font-bold text-foreground">{studentSubmittedFeedback.mentorship}/5</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Work Environment</p>
-                            <p className="font-bold text-foreground">{studentSubmittedFeedback.workEnvironment}/5</p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-secondary/30 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide">Communication</p>
-                            <p className="font-bold text-foreground">{studentSubmittedFeedback.communication}/5</p>
-                          </div>
-                        </div>
+                        {studentSubmittedFeedback.sections?.length ? (
+                          <div className="space-y-4">
+                            {studentSubmittedFeedback.sections.map((section) => (
+                              <div key={section.sectionId} className="p-4 rounded-lg bg-secondary/20 border border-border">
+                                <h3 className="text-sm sm:text-base font-bold text-foreground mb-3">{section.title}</h3>
+                                <div className="space-y-2">
+                                  {section.questions.map((question) => (
+                                    <div
+                                      key={`${section.sectionId}-${question.questionId}`}
+                                      className="p-3 rounded-md bg-background border border-border"
+                                    >
+                                      <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">
+                                        {question.label}
+                                      </p>
+                                      {question.type === "rating" && typeof question.value === "number" ? (
+                                        <div className="flex items-center gap-2">
+                                          <StarRating value={question.value} readonly size="sm" />
+                                          <span className="text-sm font-semibold text-foreground">{question.value}/5</span>
+                                        </div>
+                                      ) : (
+                                        <p className="text-sm font-semibold text-foreground whitespace-pre-wrap break-words">
+                                          {formatStudentAnswerText(question)}
+                                        </p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
 
-                        <div className="space-y-3">
-                          <div className="p-3 rounded-lg bg-secondary/20 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Strengths</p>
-                            <p className="text-sm text-foreground whitespace-pre-wrap">
-                              {studentSubmittedFeedback.strengths || "No strengths shared."}
-                            </p>
+                            {(studentSubmittedFeedback.strengths ||
+                              studentSubmittedFeedback.improvements ||
+                              studentSubmittedFeedback.overallComments) && (
+                              <div className="space-y-3">
+                                <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Strengths</p>
+                                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                                    {studentSubmittedFeedback.strengths || "No strengths shared."}
+                                  </p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Improvements</p>
+                                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                                    {studentSubmittedFeedback.improvements || "No improvement notes shared."}
+                                  </p>
+                                </div>
+                                <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                  <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Overall Comments</p>
+                                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                                    {studentSubmittedFeedback.overallComments || "No overall comments shared."}
+                                  </p>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="p-3 rounded-lg bg-secondary/20 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Improvements</p>
-                            <p className="text-sm text-foreground whitespace-pre-wrap">
-                              {studentSubmittedFeedback.improvements || "No improvement notes shared."}
-                            </p>
-                          </div>
-                          <div className="p-3 rounded-lg bg-secondary/20 border border-border">
-                            <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Overall Comments</p>
-                            <p className="text-sm text-foreground whitespace-pre-wrap">
-                              {studentSubmittedFeedback.overallComments || "No overall comments shared."}
-                            </p>
-                          </div>
-                        </div>
+                        ) : (
+                          <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Learning Experience</p>
+                                <p className="font-bold text-foreground">{typeof studentSubmittedFeedback.learningExperience === "number" ? `${studentSubmittedFeedback.learningExperience}/5` : "N/A"}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Mentorship</p>
+                                <p className="font-bold text-foreground">{typeof studentSubmittedFeedback.mentorship === "number" ? `${studentSubmittedFeedback.mentorship}/5` : "N/A"}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Work Environment</p>
+                                <p className="font-bold text-foreground">{typeof studentSubmittedFeedback.workEnvironment === "number" ? `${studentSubmittedFeedback.workEnvironment}/5` : "N/A"}</p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/30 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide">Communication</p>
+                                <p className="font-bold text-foreground">{typeof studentSubmittedFeedback.communication === "number" ? `${studentSubmittedFeedback.communication}/5` : "N/A"}</p>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Strengths</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                  {studentSubmittedFeedback.strengths || "No strengths shared."}
+                                </p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Improvements</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                  {studentSubmittedFeedback.improvements || "No improvement notes shared."}
+                                </p>
+                              </div>
+                              <div className="p-3 rounded-lg bg-secondary/20 border border-border">
+                                <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">Overall Comments</p>
+                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                  {studentSubmittedFeedback.overallComments || "No overall comments shared."}
+                                </p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : (
                       <p className="text-sm text-muted-foreground">
