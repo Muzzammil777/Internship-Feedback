@@ -289,37 +289,16 @@ export default function Login() {
                     required
                   />
                 </div>
-              </motion.div>
-
-              {/* Remember Me & Forgot Password */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.6 }}
-                className="flex items-center justify-between"
-              >
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                  />
-                  <span className="text-sm text-muted-foreground">
-                    Remember me
-                  </span>
-                </label>
-                <button
-                  type="button"
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </button>
+                <p className="text-center text-sm text-muted-foreground leading-relaxed pt-1">
+                  Use the credentials provided by your company to log in.
+                </p>
               </motion.div>
 
               {/* Login Button */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
+                transition={{ delay: 0.6 }}
               >
                 <Button
                   type="submit"
@@ -335,7 +314,7 @@ export default function Login() {
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ delay: 0.8 }}
+                transition={{ delay: 0.7 }}
                 className="relative"
               >
                 <div className="absolute inset-0 flex items-center">
@@ -352,7 +331,7 @@ export default function Login() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.9 }}
+                transition={{ delay: 0.8 }}
                 className="space-y-3"
               >
                 {/* Student Credentials */}
@@ -415,7 +394,7 @@ export default function Login() {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 0.9 }}
           className="text-center text-sm text-muted-foreground mt-6"
         >
           Secure authentication powered by industry standards
