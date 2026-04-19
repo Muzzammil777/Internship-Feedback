@@ -395,6 +395,37 @@ async def list_student_feedback(
         return documents
 
 
+@router.delete("", status_code=200)
+async def reset_all_feedback(
+    request: Request,
+    current_user: AuthenticatedUser = Depends(require_company),
+):
+    """Delete all company and student feedback records and reset student statuses to pending."""
+    global _company_feedback_store, _student_feedback_store
+
+    mongodb_ready = await _ensure_mongodb_ready(request)
+
+    if mongodb_ready:
+        try:
+            company_collection = get_collection("company_feedback")
+            student_collection = get_collection("student_feedback")
+            students_collection = get_collection("students")
+
+            await company_collection.delete_many({})
+            await student_collection.delete_many({})
+            await students_collection.update_many({}, {"$set": {"status": "pending"}})
+
+            logger.info("All feedback reset by %s", current_user.email)
+        except Exception as exc:
+            logger.error("MongoDB reset failed: %s", exc)
+            raise HTTPException(status_code=500, detail="Failed to reset feedback in database") from exc
+
+    _company_feedback_store = {}
+    _student_feedback_store = {}
+
+    return {"message": "All feedback has been reset successfully"}
+
+
 @router.post("/student", status_code=201)
 @limiter.limit(settings.feedback_rate_limit)
 async def save_student_feedback(

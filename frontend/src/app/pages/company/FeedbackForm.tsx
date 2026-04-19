@@ -29,6 +29,7 @@ import {
   SquarePen,
   MessageSquare,
   X,
+  RotateCcw,
 } from "lucide-react";
 
 interface Student {
@@ -349,6 +350,7 @@ export default function CompanyFeedbackForm() {
   const [templates, setTemplates] = useState<FormTemplate[]>([]);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [templateValues, setTemplateValues] = useState<Record<string, string | number>>({});
+  const [isResetting, setIsResetting] = useState(false);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -886,6 +888,29 @@ export default function CompanyFeedbackForm() {
     setEditingStudentId(selectedStudentId);
   };
 
+  const handleResetAllFeedback = async () => {
+    const confirmed = window.confirm(
+      "Are you sure you want to reset ALL feedback? This will permanently delete all submitted feedback and reset student statuses to pending. This action cannot be undone."
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setIsResetting(true);
+    setError("");
+    try {
+      const response = await apiFetch(`${apiBaseUrl}/feedback`, { method: "DELETE" });
+      if (!response.ok) {
+        throw new Error("Failed to reset feedback");
+      }
+      // Reload the page to refresh all state (student statuses, feedback records, etc.)
+      window.location.reload();
+    } catch {
+      setError("Could not reset feedback. Please try again.");
+      setIsResetting(false);
+    }
+  };
+
   const avatarGradients = [
     "from-indigo-500 to-purple-600",
     "from-teal-500 to-cyan-600",
@@ -994,6 +1019,19 @@ export default function CompanyFeedbackForm() {
               className="h-full bg-gradient-to-r from-emerald-500 to-teal-600"
             />
           </div>
+          {completedCount > 0 && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="mt-3 w-full flex items-center gap-2 text-destructive border-destructive/40 hover:bg-destructive/10"
+              onClick={handleResetAllFeedback}
+              disabled={isResetting}
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${isResetting ? "animate-spin" : ""}`} />
+              {isResetting ? "Resetting…" : "Reset All Feedback"}
+            </Button>
+          )}
         </div>
 
         {/* Search */}
