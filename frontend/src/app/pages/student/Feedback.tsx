@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import {
   Award,
   Building2,
@@ -200,6 +200,7 @@ export default function StudentFeedback() {
   const [role, setRole] = useState("");
 
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -322,6 +323,10 @@ export default function StudentFeedback() {
 
       if (!response.ok) throw new Error("Failed to submit");
       setIsSubmitted(true);
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+      }, 2000);
     } catch {
       setError("Could not save your feedback right now.");
     } finally {
@@ -553,10 +558,50 @@ export default function StudentFeedback() {
         )}
 
         {activeTab === "student" && (
+          <AnimatePresence mode="wait">
+            {showSuccess ? (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-md flex items-center justify-center min-h-[300px]"
+              >
+                <div className="text-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 15,
+                    }}
+                    className="relative mx-auto mb-6"
+                  >
+                    <div className="w-24 h-24 bg-success rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle2 className="w-12 h-12 text-white" strokeWidth={3} />
+                    </div>
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1.5, opacity: 0 }}
+                      transition={{ duration: 1, ease: "easeOut" }}
+                      className="absolute inset-0 bg-success rounded-full"
+                    />
+                  </motion.div>
+                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                    Feedback Submitted!
+                  </h2>
+                  <p className="text-muted-foreground">
+                    Thank you for sharing your internship experience
+                  </p>
+                </div>
+              </motion.div>
+            ) : (
           <motion.div
             key="student-feedback"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             transition={{ duration: 0.3 }}
             className="bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-md hover:shadow-xl transition-all duration-300"
           >
@@ -623,6 +668,8 @@ export default function StudentFeedback() {
               )}
             </form>
           </motion.div>
+            )}
+          </AnimatePresence>
         )}
       </div>
     </div>
