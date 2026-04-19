@@ -5,6 +5,7 @@ import { Input } from "../../components/ui/input";
 import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import SkillTag from "../../components/shared/SkillTag";
+import LoadingAnimation from "../../components/shared/LoadingAnimation";
 import { useAuth } from "../../context/AuthContext";
 import { apiFetch } from "../../lib/api";
 import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2 } from "lucide-react";
@@ -192,15 +193,7 @@ export default function StudentProfile() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
-        />
-      </div>
-    );
+    return <LoadingAnimation title="Loading profile" description="Fetching your personal and internship details..." />;
   }
 
 

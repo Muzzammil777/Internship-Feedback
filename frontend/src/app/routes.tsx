@@ -1,6 +1,7 @@
 import { Suspense, lazy } from "react";
 import type { ReactNode } from "react";
 import { createHashRouter } from "react-router";
+import LoadingAnimation from "./components/shared/LoadingAnimation";
 
 const Login = lazy(() => import("./pages/Login"));
 const RootLayout = lazy(() => import("./layouts/RootLayout"));
@@ -13,9 +14,7 @@ const CompanyFeedbackForm = lazy(() => import("./pages/company/FeedbackForm"));
 const CompanyFormEditor = lazy(() => import("./pages/company/FormEditor"));
 
 const RouteLoader = () => (
-  <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground text-sm">
-    Loading...
-  </div>
+  <LoadingAnimation title="Loading page" description="Preparing the workspace..." />
 );
 
 const withSuspense = (element: ReactNode) => (

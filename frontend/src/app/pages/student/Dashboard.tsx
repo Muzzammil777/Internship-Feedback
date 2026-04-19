@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import StatusCard from "../../components/shared/StatusCard";
 import SkillTag from "../../components/shared/SkillTag";
+import LoadingAnimation from "../../components/shared/LoadingAnimation";
 import { useAuth } from "../../context/AuthContext";
 import { apiFetch } from "../../lib/api";
 import {
@@ -86,15 +87,7 @@ export default function StudentDashboard() {
   }, [user?.email]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
-        />
-      </div>
-    );
+    return <LoadingAnimation title="Loading dashboard" description="Fetching your internship overview..." />;
   }
 
   // Fallback to user data if profile fetch fails

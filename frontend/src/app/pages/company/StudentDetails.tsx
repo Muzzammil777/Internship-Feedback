@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useState, useEffect } from "react";
 import { Button } from "../../components/ui/button";
 import SkillTag from "../../components/shared/SkillTag";
+import LoadingAnimation, { LoadingSpinner } from "../../components/shared/LoadingAnimation";
 import StudentAvatar from "../../components/shared/StudentAvatar";
 import {
   User,
@@ -318,16 +319,12 @@ export default function CompanyStudentDetails() {
           </motion.div>
 
           {isLoadingStudents ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex min-h-[320px] items-center justify-center rounded-2xl border border-border bg-card shadow-sm"
-            >
-              <div className="flex items-center gap-3 text-muted-foreground">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                <span className="text-sm font-medium">Loading students...</span>
-              </div>
-            </motion.div>
+            <LoadingAnimation
+              compact
+              title="Loading students"
+              description="Fetching the student directory..."
+              className="rounded-2xl border border-border bg-card shadow-sm"
+            />
           ) : (
             <>
               {/* Student Cards Grid */}
@@ -664,11 +661,7 @@ export default function CompanyStudentDetails() {
                       >
                         {isSubmitting ? (
                           <>
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                              className="w-4 h-4 border-2 border-white border-t-transparent rounded-full"
-                            />
+                            <LoadingSpinner className="w-4 h-4" />
                             Creating...
                           </>
                         ) : (

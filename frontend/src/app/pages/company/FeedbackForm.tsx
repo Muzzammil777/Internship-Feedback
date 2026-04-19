@@ -6,6 +6,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import { Input } from "../../components/ui/input";
 import StarRating from "../../components/shared/StarRating";
+import LoadingAnimation from "../../components/shared/LoadingAnimation";
 import StudentAvatar from "../../components/shared/StudentAvatar";
 import { Slider } from "../../components/ui/slider";
 import {
@@ -996,32 +997,12 @@ export default function CompanyFeedbackForm() {
       {/* RIGHT PANEL - Feedback Form */}
       <div className="flex-1 min-h-0 h-full overflow-y-scroll scroll-smooth">
         {isLoadingStudents && students.length === 0 ? (
-          <div className="p-4 sm:p-8 space-y-6">
-            <div className="flex justify-end">
-              <p className="text-sm text-muted-foreground">Loading students...</p>
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-5 sm:p-7 shadow-sm animate-pulse">
-              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
-                <div className="w-20 h-20 rounded-full bg-secondary/70" />
-                <div className="flex-1 space-y-3 w-full">
-                  <div className="h-7 w-56 rounded-md bg-secondary/70" />
-                  <div className="h-4 w-40 rounded-md bg-secondary/60" />
-                  <div className="h-4 w-64 rounded-md bg-secondary/60" />
-                </div>
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm animate-pulse space-y-4">
-              <div className="h-5 w-48 rounded-md bg-secondary/70" />
-              <div className="h-4 w-full rounded-md bg-secondary/50" />
-              <div className="h-4 w-5/6 rounded-md bg-secondary/50" />
-              <div className="h-4 w-4/6 rounded-md bg-secondary/50" />
-            </div>
-            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm animate-pulse space-y-4">
-              <div className="h-5 w-40 rounded-md bg-secondary/70" />
-              <div className="h-11 w-full rounded-xl bg-secondary/60" />
-              <div className="h-11 w-full rounded-xl bg-secondary/60" />
-            </div>
-          </div>
+          <LoadingAnimation
+            compact
+            title="Loading students"
+            description="Preparing the evaluation workspace..."
+            className="h-full min-h-[520px] px-4"
+          />
         ) : students.length === 0 ? (
           <div className="h-full flex items-center justify-center p-6 text-center">
             <div>
@@ -1201,7 +1182,12 @@ export default function CompanyFeedbackForm() {
                   </div>
 
                   {isLoadingStudentFeedback ? (
-                    <p className="text-sm text-muted-foreground">Loading student feedback...</p>
+                    <LoadingAnimation
+                      compact
+                      title="Loading student feedback"
+                      description="Fetching the submitted answers..."
+                      className="justify-start py-2 px-0"
+                    />
                   ) : studentSubmittedFeedback ? (
                     showStudentSubmittedFeedback ? (
                       <div className="space-y-4">

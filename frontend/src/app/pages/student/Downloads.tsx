@@ -1,7 +1,8 @@
 import { AnimatePresence, motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Download, FileText, Award, Building2, File, Loader2, Check } from "lucide-react";
+import { Download, FileText, Award, Building2, File, Check } from "lucide-react";
+import LoadingAnimation from "../../components/shared/LoadingAnimation";
 import { useAuth } from "../../context/AuthContext";
 import { apiFetch } from "../../lib/api";
 
@@ -1922,15 +1923,7 @@ export default function StudentDownloads() {
   }, [companyFeedback, profile, studentFeedback]);
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
-        />
-      </div>
-    );
+    return <LoadingAnimation title="Loading downloads" description="Preparing your reports and certificates..." />;
   }
 
   const colorClasses = {
@@ -2122,17 +2115,14 @@ export default function StudentDownloads() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -6 }}
                     transition={{ duration: 0.2 }}
+                    className="w-full"
                   >
-                    <div className="relative mx-auto mb-4 w-14 h-14 flex items-center justify-center">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-                        className="absolute inset-0 rounded-full border-2 border-primary/20 border-t-primary"
-                      />
-                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                    </div>
-                    <p className="text-base font-semibold text-foreground">Preparing your PDF</p>
-                    <p className="text-sm text-muted-foreground mt-1">{generationLabel || "Please wait..."}</p>
+                    <LoadingAnimation
+                      compact
+                      title="Preparing your PDF"
+                      description={generationLabel || "Please wait..."}
+                      className="px-0 py-0 min-h-0"
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>
