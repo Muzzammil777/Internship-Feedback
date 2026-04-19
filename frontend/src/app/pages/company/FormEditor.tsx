@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../../components/ui/select";
-import { Plus, Trash2, Save, GripVertical, Eye, Settings2, Type, AlignLeft, Sliders, Star, Building2, GraduationCap, CheckCircle2, MessageSquare } from "lucide-react";
+import { Plus, Trash2, Save, GripVertical, Eye, Settings2, Type, AlignLeft, Sliders, Star, Building2, GraduationCap, CheckCircle2, MessageSquare, Maximize2, Minimize2 } from "lucide-react";
 
 interface FormField {
   id: string;
@@ -100,6 +100,8 @@ export default function CompanyFormEditor() {
   const [editingField, setEditingField] = useState<string | null>(null);
   const [savedTemplates, setSavedTemplates] = useState<FormTemplate[]>([]);
   const [saveFeedback, setSaveFeedback] = useState<string>("");
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     try {
@@ -135,6 +137,21 @@ export default function CompanyFormEditor() {
   useEffect(() => {
     localStorage.setItem(TEMPLATE_STORAGE_KEY, JSON.stringify(savedTemplates));
   }, [savedTemplates]);
+
+  useEffect(() => {
+    if (!isFullscreen) {
+      return;
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsFullscreen(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFullscreen]);
 
   // Get current fields based on active form type
   const fields = activeFormType === "companyToStudent" ? companyToStudentFields : studentToCompanyFields;
@@ -183,8 +200,12 @@ export default function CompanyFormEditor() {
       return [nextRecord, ...withoutCurrentType];
     });
 
+    setShowSaveSuccess(true);
     setSaveFeedback("Form saved successfully.");
-    window.setTimeout(() => setSaveFeedback(""), 2500);
+    window.setTimeout(() => {
+      setSaveFeedback("");
+      setShowSaveSuccess(false);
+    }, 2500);
   };
 
   const getFieldIcon = (type: string) => {
@@ -198,6 +219,10 @@ export default function CompanyFormEditor() {
       default: return Type;
     }
   };
+
+  const panelHeightClass = isFullscreen
+    ? "max-h-[calc(100vh-250px)]"
+    : "max-h-[calc(100vh-300px)]";
 
   return (
     <div className="min-h-full bg-background">
@@ -257,11 +282,44 @@ export default function CompanyFormEditor() {
               </div>
             </div>
 
-            <div className="mb-5 flex justify-start">
-              <Button className="flex items-center justify-center gap-2 shadow-lg w-full lg:w-auto" size="lg" onClick={handleSaveCurrentForm}>
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-center gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="flex items-center justify-center gap-2 shadow-md w-full sm:w-auto"
+                size="lg"
+                onClick={() => setIsFullscreen((previous) => !previous)}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                {isFullscreen ? "Exit Fullscreen" : "Open Fullscreen"}
+              </Button>
+
+              <Button className="flex items-center justify-center gap-2 shadow-lg w-full sm:w-auto" size="lg" onClick={handleSaveCurrentForm}>
                 <Save className="w-4 h-4" />
                 Save Form
               </Button>
+
+              <AnimatePresence>
+                {showSaveSuccess && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.95 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm font-semibold"
+                  >
+                    <motion.span
+                      initial={{ scale: 0.7, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{ type: "spring", stiffness: 280, damping: 16 }}
+                      className="inline-flex items-center justify-center"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                    </motion.span>
+                    Saved
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {saveFeedback && (
@@ -273,8 +331,26 @@ export default function CompanyFormEditor() {
         </div>
       </div>
 
+      <AnimatePresence>
+        {isFullscreen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-40 bg-black/35 backdrop-blur-[1px]"
+            onClick={() => setIsFullscreen(false)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Two-Panel Layout */}
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+      <div
+        className={
+          isFullscreen
+            ? "fixed inset-4 z-50 bg-background border border-border rounded-2xl shadow-2xl overflow-y-auto p-4 sm:p-6"
+            : "max-w-[1600px] mx-auto px-4 sm:px-6 py-6 sm:py-8"
+        }
+      >
         {/* Form Type Indicator */}
         <motion.div
           key={activeFormType}
@@ -282,31 +358,55 @@ export default function CompanyFormEditor() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200"
         >
-          <div className="flex items-center gap-3">
-            {activeFormType === "companyToStudent" ? (
-              <>
-                <Building2 className="w-5 h-5 text-primary" />
-                <div>
-                  <h3 className="font-bold text-foreground">
-                    Editing: Company → Student Feedback Form
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    This form is used by companies to evaluate student interns
-                  </p>
-                </div>
-              </>
-            ) : (
-              <>
-                <GraduationCap className="w-5 h-5 text-teal-600" />
-                <div>
-                  <h3 className="font-bold text-foreground">
-                    Editing: Student → Company Feedback Form
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    This form is used by students to evaluate their internship experience
-                  </p>
-                </div>
-              </>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {activeFormType === "companyToStudent" ? (
+                <>
+                  <Building2 className="w-5 h-5 text-primary" />
+                  <div>
+                    <h3 className="font-bold text-foreground">
+                      Editing: Company → Student Feedback Form
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      This form is used by companies to evaluate student interns
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <GraduationCap className="w-5 h-5 text-teal-600" />
+                  <div>
+                    <h3 className="font-bold text-foreground">
+                      Editing: Student → Company Feedback Form
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      This form is used by students to evaluate their internship experience
+                    </p>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {isFullscreen && (
+              <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-2">
+                <Button
+                  onClick={handleSaveCurrentForm}
+                  size="sm"
+                  className="w-full sm:w-auto flex items-center gap-2 shadow-md"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Form
+                </Button>
+                <Button
+                  onClick={() => setIsFullscreen(false)}
+                  size="sm"
+                  variant="outline"
+                  className="w-full sm:w-auto flex items-center gap-2"
+                >
+                  <Minimize2 className="w-4 h-4" />
+                  Exit Fullscreen
+                </Button>
+              </div>
             )}
           </div>
         </motion.div>
@@ -346,7 +446,7 @@ export default function CompanyFormEditor() {
               </div>
             </div>
 
-            <div className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+            <div className={`p-6 ${panelHeightClass} overflow-y-auto`}>
               <Reorder.Group axis="y" values={fields} onReorder={setFields} className="space-y-4">
                 <AnimatePresence mode="popLayout">
                   {fields.map((field, index) => {
@@ -495,7 +595,7 @@ export default function CompanyFormEditor() {
               </div>
             </div>
 
-            <div className="p-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+            <div className={`p-6 ${panelHeightClass} overflow-y-auto`}>
               <div className="space-y-6">
                 {fields.map((field) => (
                   <motion.div

@@ -734,7 +734,7 @@ export default function CompanyStudentDetails() {
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* LEFT - Large Student Photo */}
                 <div className="flex-shrink-0">
-                  <div className="relative">
+                  <div className="relative w-32 h-32 rounded-2xl overflow-hidden">
                     {selectedStudent.profilePhoto ? (
                       <img
                         src={selectedStudent.profilePhoto}
@@ -755,7 +755,7 @@ export default function CompanyStudentDetails() {
                       </div>
                     )}
                     {/* Status badge on photo */}
-                    <div className={`absolute -bottom-2 -right-2 px-3 py-1.5 rounded-xl text-xs font-bold border-2 border-white shadow-lg ${statusColors[selectedStudent.status]}`}>
+                    <div className={`absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-lg max-w-[calc(100%-12px)] ${statusColors[selectedStudent.status]}`}>
                       {selectedStudent.status.charAt(0).toUpperCase() +
                         selectedStudent.status.slice(1)}
                     </div>

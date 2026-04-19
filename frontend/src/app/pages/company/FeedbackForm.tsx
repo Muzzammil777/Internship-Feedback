@@ -319,6 +319,27 @@ export default function CompanyFeedbackForm() {
   const [templateValues, setTemplateValues] = useState<Record<string, string | number>>({});
 
   useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const previousHtmlOverflow = html.style.overflow;
+    const previousBodyOverflow = body.style.overflow;
+    const previousHtmlHeight = html.style.height;
+    const previousBodyHeight = body.style.height;
+
+    html.style.height = "100%";
+    body.style.height = "100%";
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+
+    return () => {
+      html.style.overflow = previousHtmlOverflow;
+      body.style.overflow = previousBodyOverflow;
+      html.style.height = previousHtmlHeight;
+      body.style.height = previousBodyHeight;
+    };
+  }, []);
+
+  useEffect(() => {
     try {
       const stored = localStorage.getItem(TEMPLATE_STORAGE_KEY);
       if (!stored) {
@@ -813,13 +834,13 @@ export default function CompanyFeedbackForm() {
   );
 
   return (
-    <div className="flex flex-col md:flex-row min-h-full bg-background">
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden bg-background">
       {/* LEFT PANEL - Student List */}
       <motion.div
         initial={{ x: -20, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         transition={{ duration: 0.3 }}
-        className="hidden md:flex w-96 bg-card border-r border-border flex-col shadow-lg"
+        className="hidden md:flex w-[320px] h-full shrink-0 bg-card border-r border-border flex-col shadow-lg overflow-y-auto"
       >
         {/* Header */}
         <div className="p-6 border-b border-border bg-gradient-to-r from-primary/5 to-purple-50">
@@ -844,7 +865,7 @@ export default function CompanyFeedbackForm() {
         </div>
 
         {/* Search */}
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border sticky top-0 z-10 bg-card/95 backdrop-blur-sm">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -857,7 +878,7 @@ export default function CompanyFeedbackForm() {
         </div>
 
         {/* Student List */}
-        <div className="flex-1 p-4 space-y-2">
+        <div className="p-4 space-y-2">
           <AnimatePresence mode="popLayout">
             {filteredStudents.map((student, index) => {
               const isSelected = student.id === selectedStudentId;
@@ -932,7 +953,7 @@ export default function CompanyFeedbackForm() {
       </motion.div>
 
       {/* MOBILE - Horizontal Student Selector */}
-      <div className="md:hidden bg-card border-b border-border p-4">
+      <div className="md:hidden bg-card border-b border-border p-4 shrink-0">
         <div className="mb-3">
           <h2 className="text-sm font-bold text-foreground">
             Student Evaluations — {completedCount}/{students.length} done
@@ -972,7 +993,7 @@ export default function CompanyFeedbackForm() {
       </div>
 
       {/* RIGHT PANEL - Feedback Form */}
-      <div className="flex-1">
+      <div className="flex-1 min-h-0 h-full overflow-y-scroll scroll-smooth">
         {isLoadingStudents && students.length === 0 ? (
           <div className="p-4 sm:p-8 space-y-6">
             <div className="flex justify-end">

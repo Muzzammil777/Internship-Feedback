@@ -7,6 +7,7 @@ import { Label } from "../../components/ui/label";
 import SkillTag from "../../components/shared/SkillTag";
 import { useAuth } from "../../context/AuthContext";
 import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Task {
   id: string;
@@ -19,8 +20,6 @@ export default function StudentProfile() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState("");
-  const [saveError, setSaveError] = useState("");
   const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
@@ -90,17 +89,16 @@ export default function StudentProfile() {
     const file = e.target.files?.[0];
     if (file) {
       if (!file.type.startsWith("image/")) {
-        setSaveError("Please choose an image file.");
+        toast.error("Please choose an image file.");
         return;
       }
 
       const maxFileSizeBytes = 2 * 1024 * 1024;
       if (file.size > maxFileSizeBytes) {
-        setSaveError("Please upload an image smaller than 2MB.");
+        toast.error("Please upload an image smaller than 2MB.");
         return;
       }
 
-      setSaveError("");
       const reader = new FileReader();
       reader.onloadend = () => {
         setProfilePhoto(reader.result as string);
@@ -116,8 +114,7 @@ export default function StudentProfile() {
     }
 
     setProfilePhoto(null);
-    setSaveError("");
-    setSaveMessage("Photo removed. Click Save Changes to persist.");
+    toast("Photo removed. Click Save Changes to persist.");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -155,8 +152,6 @@ export default function StudentProfile() {
     }
 
     setIsSaving(true);
-    setSaveError("");
-    setSaveMessage("");
 
     try {
       const response = await fetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`, {
@@ -187,9 +182,9 @@ export default function StudentProfile() {
         throw new Error(errorPayload.detail ?? "Failed to save profile");
       }
 
-      setSaveMessage("Profile saved successfully.");
+      toast.success("Profile saved successfully.");
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : "Unable to save profile right now.");
+      toast.error(error instanceof Error ? error.message : "Unable to save profile right now.");
     } finally {
       setIsSaving(false);
     }
@@ -234,7 +229,7 @@ export default function StudentProfile() {
               <div className="flex flex-col md:flex-row gap-8 items-start">
                 {/* LEFT - Large Profile Photo with Upload */}
                 <div className="flex-shrink-0">
-                  <div className="relative group">
+                  <div className="relative group w-32 h-32 rounded-2xl overflow-hidden">
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -267,6 +262,8 @@ export default function StudentProfile() {
                         <span className="text-5xl font-bold text-white mb-2">
                           {formData.name
                             .split(" ")
+                            .filter(Boolean)
+                            .slice(0, 2)
                             .map((n) => n[0])
                             .join("")
                             .toUpperCase()}
@@ -283,7 +280,7 @@ export default function StudentProfile() {
                     )}
 
                     {/* Status badge on photo */}
-                    <div className="absolute -bottom-2 -right-2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-700 border-2 border-white shadow-lg flex items-center gap-1.5">
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 shadow-lg flex items-center gap-1.5 max-w-[calc(100%-12px)]">
                       <CheckCircle2 className="w-3.5 h-3.5" />
                       Active
                     </div>
@@ -324,7 +321,9 @@ export default function StudentProfile() {
                       <GraduationCap className="w-5 h-5 text-accent" />
                     </div>
                     <span className="text-base text-muted-foreground font-medium">
-                      {formData.COLLEGE}
+                      {formData.COLLEGE_DEPARTMENT
+                        ? `${formData.COLLEGE} - ${formData.COLLEGE_DEPARTMENT}`
+                        : formData.COLLEGE}
                     </span>
                   </div>
 
@@ -699,17 +698,6 @@ export default function StudentProfile() {
             </Button>
           </motion.div>
 
-          {saveError && (
-            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 -mt-6 mb-6">
-              {saveError}
-            </div>
-          )}
-
-          {saveMessage && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 -mt-6 mb-6">
-              {saveMessage}
-            </div>
-          )}
         </form>
       </div>
     </div>

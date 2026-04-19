@@ -1,378 +1,251 @@
-<div align="center">
+# MoviCloud Internship Feedback System
 
-<img src="frontend/public/favicon.png" alt="MoviCloud Logo" width="80" height="80" />
+Full-stack internship evaluation platform with:
 
-# MoviCloud - Internship Feedback System
+- Frontend: React + TypeScript + Vite
+- Backend: FastAPI + MongoDB (Motor)
+- Two roles: student and company
 
-A full-stack platform for managing internship evaluations between companies and students.
+The current README is implementation-based and reflects what is actually present in this repository.
 
-[![React](https://img.shields.io/badge/React-18.3-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=for-the-badge&logo=mongodb&logoColor=white)](https://www.mongodb.com/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
-[![Vite](https://img.shields.io/badge/Vite-6.3-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
+## Overview
 
-</div>
+MoviCloud supports two feedback directions:
 
----
+- Company -> Student: structured intern performance evaluation
+- Student -> Company: section-based internship experience feedback
 
-## 📋 Overview
+The app includes profile management, feedback submission and review, and PDF report generation on the frontend.
 
-The MoviCloud Internship Feedback System is a role-based web application that streamlines the internship evaluation process. Companies can assess student interns across multiple performance metrics, while students can review their evaluations and share feedback about their internship experience — all in one centralized platform.
+## Current Status
 
----
+- Backend is implemented and running (not planned)
+- Frontend is connected to backend endpoints
+- Authentication is database-backed email/password login
+- JWT/session auth is not implemented yet (backend returns a demo token)
+- Form templates are currently persisted in browser localStorage (frontend)
 
-## ✨ Features
+## Tech Stack
 
-### 🎓 Student Portal
-| Feature | Description |
-|---|---|
-<<<<
+### Frontend
 
-### 🏢 Company Portal
-| Feature | Description |
-|---|---|
-| Student Directory | Browse all interns, search/filter, and view detailed student profiles |
-| Feedback Form | Evaluate students across 8 performance metrics with sliders and written comments |
-| Form Editor | Customize both feedback form templates (Company→Student and Student→Company) |
-| Add Student | Create student accounts with login credentials directly from the dashboard |
+- React 18
+- TypeScript 5
+- Vite 6
+- Tailwind CSS 4
+- Radix UI and shadcn-based components
+- motion (Framer Motion)
+- React Router 7
+- jsPDF + html2canvas for report generation
 
----
+### Backend
 
-## 🏗️ Architecture
+- FastAPI 0.115
+- Uvicorn
+- Pydantic + pydantic-settings
+- Motor (MongoDB async driver)
+- python-dotenv
 
-```
-MoviCloud Internship Feedback
-├── frontend/          # React + Vite SPA
-└── backend/           # FastAPI REST API  (planned)
-```
+## Repository Structure
 
-### Tech Stack
-
-| Layer | Technology | Purpose |
-|---|---|---|
-| Frontend | React 18 + TypeScript | UI framework |
-| Build Tool | Vite 6 | Dev server & bundler |
-| Styling | Tailwind CSS v4 | Utility-first CSS |
-| UI Components | Radix UI / shadcn | Accessible component primitives |
-| Animations | Framer Motion (motion) | Page & micro-animations |
-| Icons | Lucide React | Icon library |
-| Routing | React Router v7 | Client-side routing |
-| Charts | Recharts | Data visualization |
-| Backend | FastAPI (Python) | REST API & auth |
-| Database | MongoDB | Document store for users, feedback, forms |
-
----
-
-## 📁 Project Structure
-
-```
-frontend/
-├── public/
-│   └── favicon.png              # MoviCloud company logo
-├── src/
-│   ├── app/
-│   │   ├── components/
-│   │   │   ├── shared/          # Reusable components
-│   │   │   │   ├── Logo.tsx
-│   │   │   │   ├── RatingBar.tsx
-│   │   │   │   ├── StarRating.tsx
-│   │   │   │   ├── SkillTag.tsx
-│   │   │   │   └── StudentAvatar.tsx
-│   │   │   └── ui/              # shadcn/Radix UI primitives
-│   │   ├── context/
-│   │   │   └── AuthContext.tsx  # Role-based auth state
-│   │   ├── layouts/
-│   │   │   └── RootLayout.tsx   # Sidebar navigation shell
-│   │   ├── pages/
-│   │   │   ├── Login.tsx        # Shared login page
-│   │   │   ├── student/
-│   │   │   │   ├── Dashboard.tsx
-│   │   │   │   ├── Profile.tsx
-│   │   │   │   ├── Feedback.tsx
-│   │   │   │   └── Downloads.tsx
-│   │   │   └── company/
-│   │   │       ├── StudentDetails.tsx
-│   │   │       ├── FeedbackForm.tsx
-│   │   │       └── FormEditor.tsx
-│   │   ├── routes.tsx           # React Router config
-│   │   └── App.tsx
-│   └── main.tsx
-├── index.html
-├── vite.config.ts
-├── tsconfig.json
-└── package.json
+```text
+.
+|- frontend/
+|  |- src/app/pages/student/      # dashboard, profile, feedback, downloads
+|  |- src/app/pages/company/      # student directory, feedback form, form editor
+|  |- src/app/context/            # auth context and login flow
+|  |- src/app/layouts/            # sidebar/root layout
+|  |- public/
+|  `- .env.example
+|
+|- backend/
+|  |- app/main.py                 # FastAPI app entry, middleware, routers
+|  |- app/core/                   # settings and async mongo connection
+|  |- app/routes/                 # auth, students, feedback, health
+|  |- models/                     # domain documents (typed Pydantic models)
+|  |- schemas/                    # API request/response schemas
+|  |- database/                   # sync mongo helpers + index definitions
+|  |- requirements.txt
+|  `- .env.example
+|
+|- start.bat                      # convenience startup script
+`- README.md
 ```
 
----
+## Backend Analysis
 
-## 🔐 Authentication & Roles
+### App Composition
 
-The system uses role-based access control with two roles:
+FastAPI app bootstraps in backend/app/main.py and includes:
 
-| Role | Demo Credentials | Redirects to |
-|---|---|---|
-| Student | `student@example.com` / `123456` | `/student/dashboard` |
-| Company | `admin@example.com` / `123456` | `/company/student-details` |
+- CORS middleware using CORS_ORIGINS from env
+- Startup DB readiness probe (ping + demo user seed)
+- Routers: /health, /auth, /students, /feedback
 
-> Note: Authentication currently uses a mock `AuthContext`. Backend integration with FastAPI + JWT will replace this.
+### Implemented Endpoints
 
----
+#### Health
 
-## 🔌 API Design (Planned — FastAPI + MongoDB)
+- GET /health
 
+#### Auth
+
+- POST /auth/login
+  - validates email/password against users collection
+  - fallback to demo credentials from env
+  - returns access_token, token_type, email, name, role
+
+#### Students
+
+- GET /students
+- POST /students
+- GET /students/profile/{email}
+- PUT /students/profile/{email}
+- DELETE /students/{student_id}
+
+Notes:
+
+- Student create also creates matching user login record
+- Profile includes photo, skills, tasks, internship metadata
+- profilePhoto is stored as base64 data URL string
+
+#### Feedback
+
+- GET /feedback/company?student_id=...
+- POST /feedback/company
+- GET /feedback/student?student_email=...
+- POST /feedback/student
+
+Notes:
+
+- Student feedback supports section-based questionnaire payload
+- Legacy fallback fields are still accepted
+- Company feedback writes student status to completed
+- Route has in-memory fallback if MongoDB becomes unavailable
+
+### Data and Schema Layers
+
+The backend currently has two parallel layers:
+
+- Active route-level schema models under backend/app/routes
+- Additional domain models and schemas under backend/models and backend/schemas for richer typed architecture and index planning
+
+MongoDB index definitions exist in backend/database/indexes.py for users, students, companies, feedback, templates, and downloads.
+
+## Frontend Analysis
+
+### Routing and Roles
+
+Routes are role-oriented:
+
+- student/dashboard
+- student/profile
+- student/feedback
+- student/downloads
+- company/student-details
+- company/feedback-form
+- company/form-editor
+
+Root layout provides responsive sidebar (desktop collapse + mobile drawer).
+
+### Auth Flow
+
+- Login calls POST /auth/login
+- User is persisted in localStorage
+- Role mismatch is blocked on client side
+
+Important credential detail:
+
+- Frontend quick-fill company credential currently uses admin@internfeedback.com
+- Backend default demo company credential in backend/.env.example is admin@example.com
+
+If you rely on demo login, align these values.
+
+### Student Area
+
+- Dashboard loads profile + both feedback streams
+- Profile supports editing, skills/tasks, and photo upload/removal
+- Feedback page shows company feedback and submits section-based student feedback
+- Downloads page builds PDF reports from backend data using jsPDF/html2canvas
+
+### Company Area
+
+- Student directory supports search, create student, and delete student
+- Company feedback form supports full evaluation and reads student-submitted feedback
+- Form editor allows customizable question fields for both form types
+- Template definitions are saved in localStorage and reused by feedback pages
+
+## Environment Variables
+
+### Backend (backend/.env)
+
+Start from backend/.env.example:
+
+```env
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<database>?retryWrites=true&w=majority
+MONGODB_DB=internship_feedback
+CORS_ORIGINS=http://localhost:5173
+APP_NAME=Internship Feedback API
+DEMO_STUDENT_EMAIL=student@example.com
+DEMO_STUDENT_PASSWORD=123456
+DEMO_COMPANY_EMAIL=admin@example.com
+DEMO_COMPANY_PASSWORD=123456
 ```
-POST   /auth/login                    # Login, returns JWT
-GET    /students                      # List all students (company only)
-POST   /students                      # Create student account
-GET    /students/{id}                 # Get student details
-GET    /feedback/{student_id}         # Get feedback for a student
-POST   /feedback/{student_id}         # Submit company feedback
-GET    /feedback/student/{id}/mine    # Student views own evaluations
-POST   /feedback/student/{id}/submit  # Student submits company review
-GET    /forms/templates               # Get feedback form templates
-PUT    /forms/templates/{type}        # Update a form template
-GET    /downloads/{student_id}        # List downloadable documents
+
+### Frontend (frontend/.env)
+
+Start from frontend/.env.example:
+
+```env
+VITE_API_BASE_URL=http://localhost:8000
 ```
 
----
+## Run Locally
 
-## 🚀 Getting Started
+### Option 1: Use start script (Windows)
 
-### Prerequisites
+From repository root:
 
-- Node.js `>=18`
-- npm or pnpm
-- Python `>=3.10` (for backend)
-- MongoDB Atlas account or local MongoDB instance
+```bat
+start.bat
+```
 
----
+This script installs dependencies and opens separate terminals for backend and frontend servers.
 
-### Frontend Setup
+### Option 2: Run manually
+
+Backend:
 
 ```bash
-# Navigate to the frontend directory
-cd frontend
-
-# Install dependencies
-npm install
-
-# Start the development server
-npm run dev
-```
-
-The app will be available at http://localhost:5173
-
----
-
-### Backend Setup *(FastAPI)*
-
-```bash
-# Navigate to the backend directory
 cd backend
-
-# Create and activate a virtual environment
 python -m venv .venv
-.venv\Scripts\activate       # Windows
-source .venv/bin/activate    # macOS/Linux
-
-# Install dependencies
+.venv\Scripts\activate
 pip install -r requirements.txt
-
-# Set environment variables
-cp .env.example .env
-# Edit .env with your MongoDB connection string and JWT secret
-
-# Run the development server
 uvicorn app.main:app --reload
 ```
 
-The API will be available at http://localhost:8000
-Interactive API docs: http://localhost:8000/docs
+Frontend:
 
----
-
-### Environment Variables
-
-```env
-# .env (backend)
-MONGODB_URI=mongodb+srv://<user>:<password>@cluster.mongodb.net/internship_feedback
-JWT_SECRET=your-secret-key
-JWT_ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=60
+```bash
+cd frontend
+npm install
+npm run dev
 ```
 
----
+URLs:
 
-## 🗃️ Database Schema (MongoDB)
+- Frontend: http://localhost:5173
+- Backend: http://localhost:8000
+- API docs: http://localhost:8000/docs
 
-### `users` collection
-```json
-{
-  "_id": "ObjectId",
-  "email": "alex@example.com",
-  "name": "Alex Johnson",
-  "password_hash": "<bcrypt_hash>",
-  "role": "student | company",
+## Known Gaps and Next Improvements
 
-  "tasks": [
-    {
-      "id": "ObjectId",
-      "title": "E-Commerce Platform Redesign",
-      "description": "..."
-    }
-  ],
-  "current_internship": {
-    "company_id": "ObjectId",
-    "role_title": "Engineering - Frontend",
-    "supervisor_name": "Sarah Mitchell",
-    "supervisor_email": "sarah.mitchell@techcorp.com",
-    "start_date": "YYYY-MM-DD",
-    "end_date": "YYYY-MM-DD",
-    "status": "active | completed | pending",
-    "project_title": "E-Commerce Platform Redesign"
-  },
-  "internship_history": [
-    {
-      "company_id": "ObjectId",
-      "role_title": "Engineering Intern",
-      "supervisor_name": "Manager Name",
-      "supervisor_email": "manager@company.com",
-      "start_date": "YYYY-MM-DD",
-      "end_date": "YYYY-MM-DD",
-      "status": "completed",
-      "project_title": "Project Name"
-    }
-  ],
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
+- Replace demo token auth with JWT and protected routes
+- Move form templates from browser localStorage to backend persistence
+- Add authorization guards on backend endpoints by role
+- Add automated tests for auth, feedback validation, and student lifecycle
+- Standardize demo credentials between frontend quick-fill and backend defaults
 
-### `feedback` collection
-```json
-{
-  "_id": "ObjectId",
-  "feedback_type": "company_to_student | student_to_company",
-  "student_id": "ObjectId",
-  "company_id": "ObjectId",
-  "submitted_by_user_id": "ObjectId",
-  "internship_key": "2026-01-15_2026-03-30",
-  "template_id": "ObjectId | null",
-  "ratings": {
-    "technical": 5,
-    "quality": 4,
-    "communication": 4,
-    "teamwork": 5
-  },
-  "overall_rating": 4.5,
-  "strengths": "Strong ownership and execution.",
-  "improvements": "Can improve cross-team communication.",
-  "comments": "Great internship performance.",
-  "recommendation": "Highly Recommended | null",
-  "revision": 1,
-  "is_latest": true,
-  "submitted_at": "ISODate",
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
+## License
 
-### `form_templates` collection
-```json
-{
-  "_id": "ObjectId",
-  "company_id": "ObjectId",
-  "type": "company_to_student | student_to_company",
-  "fields": [
-    {
-      "id": "1",
-      "label": "Technical Skills",
-      "type": "text | textarea | slider | rating",
-      "required": true,
-      "min_value": 1,
-      "max_value": 5,
-      "step": 1,
-      "order": 0,
-      "placeholder": "Optional helper text"
-    }
-  ],
-  "version": 1,
-  "is_active": true,
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
-
-### `downloads` collection
-```json
-{
-  "_id": "ObjectId",
-  "student_id": "ObjectId",
-  "company_id": "ObjectId",
-  "document_type": "feedback_report | internship_certificate | detailed_analysis",
-  "title": "Company Feedback Report",
-  "description": "Complete evaluation report.",
-  "file_name": "company-feedback-report.pdf",
-  "file_url": "https://storage.example.com/reports/company-feedback-report.pdf",
-  "mime_type": "application/pdf",
-  "size_bytes": 250880,
-  "generated_at": "ISODate",
-  "created_at": "ISODate",
-  "updated_at": "ISODate"
-}
-```
-
-### Frontend Field Alias Mapping
-
-The API schemas preserve frontend field names while storing normalized backend fields:
-
-- `COLLEGE` ↔ `college`
-- `Role` ↔ `role_title`
-- `supervisorEmail` ↔ `supervisor_email`
-- `startDate` ↔ `start_date`
-- `endDate` ↔ `end_date`
-- `overallRating` ↔ `overall_rating`
-- `templateId` ↔ `template_id`
-
-> Note: Student profile/domain data is intentionally stored in `students` (not `users`) to reduce duplication and support scale.
-
----
-
-## 📦 Frontend Dependencies
-
-| Package | Version | Purpose |
-|---|---|---|
-| `react` | 18.3.1 | Core UI library |
-| `react-router` | 7.13.0 | Client-side routing |
-| `motion` | 12.23 | Animations |
-| `lucide-react` | 0.487 | Icons |
-| `tailwindcss` | 4.1.12 | Styling |
-| `@radix-ui/*` | various | Accessible UI primitives |
-| `recharts` | 2.15 | Charts & data viz |
-| `react-hook-form` | 7.55 | Form management |
-| `sonner` | 2.0 | Toast notifications |
-| `class-variance-authority` | 0.7 | Component variants |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature/your-feature`
-3. Commit your changes: `git commit -m 'feat: add your feature'`
-4. Push to the branch: `git push origin feature/your-feature`
-5. Open a Pull Request
-
----
-
-## 📄 License
-
-This project is proprietary software owned by MoviCloud. All rights reserved.
-
----
-
-<div align="center">
-  <sub>Built with ❤️ by the MoviCloud Team</sub>
-</div>
+Proprietary software owned by MoviCloud.
