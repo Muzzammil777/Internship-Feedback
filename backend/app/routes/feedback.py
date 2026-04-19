@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, ValidationError, field_validator, model_validator
 from pymongo.errors import PyMongoError
 
 from app.core.database import get_collection, get_database
@@ -123,6 +123,37 @@ class CompanyFeedbackCreate(BaseModel):
         if v is None:
             return 3
         return v  # type: ignore[return-value]
+
+    @model_validator(mode="after")
+    def require_non_empty_fields(self) -> "CompanyFeedbackCreate":
+        required_fields = (
+            "studentId",
+            "studentEmail",
+            "studentName",
+            "role",
+            "college",
+            "projectTitle",
+            "duration",
+            "startDate",
+            "endDate",
+            "typeOfWorkHandled",
+            "difficultyLevel",
+            "strengths",
+            "improvements",
+            "comments",
+            "recommendation",
+        )
+
+        missing_fields = []
+        for field_name in required_fields:
+            value = getattr(self, field_name)
+            if not isinstance(value, str) or not value.strip():
+                missing_fields.append(field_name)
+
+        if missing_fields:
+            raise ValueError("Missing required company feedback fields: " + ", ".join(missing_fields))
+
+        return self
 
 
 class StudentFeedbackQuestion(BaseModel):
@@ -263,16 +294,26 @@ async def list_company_feedback(
 @limiter.limit(settings.feedback_rate_limit)
 async def save_company_feedback(
     request: Request,
-    payload: CompanyFeedbackCreate,
     current_user: AuthenticatedUser = Depends(require_company),
 ):
+    try:
+        payload_data = await request.json()
+        payload = CompanyFeedbackCreate.model_validate(payload_data)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+
     student_document = await _find_student_document(student_id=payload.studentId, student_email=payload.studentEmail or None)
     if student_document is None:
         raise HTTPException(status_code=404, detail="Student not found")
 
     student_email = str(student_document.get("email", ""))
     if payload.studentEmail and payload.studentEmail != student_email:
-        raise HTTPException(status_code=422, detail="Student email does not match the selected student")
+        logger.warning(
+            "Normalizing mismatched company feedback email for student_id=%s: payload=%s db=%s",
+            payload.studentId,
+            payload.studentEmail,
+            student_email,
+        )
 
     document = payload.model_dump()
     document["studentEmail"] = student_email
@@ -358,9 +399,14 @@ async def list_student_feedback(
 @limiter.limit(settings.feedback_rate_limit)
 async def save_student_feedback(
     request: Request,
-    payload: StudentFeedbackCreate,
     current_user: AuthenticatedUser = Depends(get_current_user),
 ):
+    try:
+        payload_data = await request.json()
+        payload = StudentFeedbackCreate.model_validate(payload_data)
+    except ValidationError as exc:
+        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+
     if current_user.role != "student":
         raise HTTPException(status_code=403, detail="Only student accounts can submit student feedback")
 

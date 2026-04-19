@@ -28,6 +28,7 @@ import {
   GraduationCap,
   SquarePen,
   MessageSquare,
+  X,
 } from "lucide-react";
 
 interface Student {
@@ -98,6 +99,35 @@ const getRecommendationButtonClass = (option: string, selected: boolean): string
 
   return "bg-gradient-to-r from-amber-500 to-orange-600 text-white border-transparent shadow-lg shadow-amber-500/30";
 };
+
+const clampText = (value: unknown, maxLength: number): string => {
+  const text = typeof value === "string" ? value : value == null ? "" : String(value);
+  return text.trim().slice(0, maxLength);
+};
+
+const clampRating = (value: unknown): number => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) {
+    return 3;
+  }
+
+  return Math.min(5, Math.max(1, Math.round(parsed)));
+};
+
+const getRequiredFieldLabel = (fieldId: string): string => {
+  const labels: Record<string, string> = {
+    typeOfWorkHandled: "Type of work handled",
+    difficultyLevel: "Difficulty level",
+    strengths: "Strengths",
+    improvements: "Improvements",
+    comments: "Additional comments",
+    recommendation: "Hiring recommendation",
+  };
+
+  return labels[fieldId] ?? fieldId;
+};
+
+const isFilledText = (value: unknown): boolean => clampText(value, 10_000).length > 0;
 
 interface FeedbackStatus {
   [studentId: string]: {
@@ -340,6 +370,22 @@ export default function CompanyFeedbackForm() {
       body.style.height = previousBodyHeight;
     };
   }, []);
+
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setError("");
+    }, 5000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [error]);
+
+  useEffect(() => {
+    setError("");
+  }, [selectedStudentId, selectedTemplateId]);
 
   useEffect(() => {
     try {
@@ -632,12 +678,31 @@ export default function CompanyFeedbackForm() {
       setError("");
 
       try {
+        const submissionStudentId = selectedStudent.id?.trim() || selectedStudent.email?.trim();
+        if (!submissionStudentId) {
+          throw new Error("Selected student is missing an ID and email.");
+        }
+
         const resolvedFeedback = mapTemplateValuesToFeedback();
         const normalizedRatings = {
-          ...resolvedFeedback.ratings,
+          technicalKnowledge: clampRating(resolvedFeedback.ratings.technicalKnowledge),
+          codeQualityImplementation: clampRating(resolvedFeedback.ratings.codeQualityImplementation),
+          taskCompletion: clampRating(resolvedFeedback.ratings.taskCompletion),
+          productivity: clampRating(resolvedFeedback.ratings.productivity),
+          attentionToDetail: clampRating(resolvedFeedback.ratings.attentionToDetail),
+          communicationClarity: clampRating(resolvedFeedback.ratings.communicationClarity),
+          reportingUpdates: clampRating(resolvedFeedback.ratings.reportingUpdates),
+          punctuality: clampRating(resolvedFeedback.ratings.punctuality),
+          responsibility: clampRating(resolvedFeedback.ratings.responsibility),
+          discipline: clampRating(resolvedFeedback.ratings.discipline),
+          collaboration: clampRating(resolvedFeedback.ratings.collaboration),
+          adaptability: clampRating(resolvedFeedback.ratings.adaptability),
           opennessToFeedback: currentFeedback.openToFeedback ? 5 : 2,
+          learningAbility: clampRating(resolvedFeedback.ratings.learningAbility),
+          skillImprovement: clampRating(resolvedFeedback.ratings.skillImprovement),
           initiativeToLearnNewThings: currentFeedback.initiativeForNewSkills ? 5 : 2,
           contributionToTeamProject: currentFeedback.meaningfulProjectContribution ? 5 : 2,
+          ownershipOfTasks: clampRating(resolvedFeedback.ratings.ownershipOfTasks),
         };
 
         const metaPayload: SystemMeta = {
@@ -654,7 +719,54 @@ export default function CompanyFeedbackForm() {
           considerForFullTime: currentFeedback.considerForFullTime,
         };
 
+        const missingRequiredFields: string[] = [];
+        const requiredTextFields: Array<[string, unknown]> = [
+          ["typeOfWorkHandled", resolvedFeedback.typeOfWorkHandled],
+          ["difficultyLevel", resolvedFeedback.difficultyLevel],
+          ["strengths", resolvedFeedback.strengths],
+          ["improvements", resolvedFeedback.improvements],
+          ["comments", resolvedFeedback.comments],
+          ["recommendation", resolvedFeedback.recommendation],
+        ];
+
+        for (const [fieldId, value] of requiredTextFields) {
+          if (!isFilledText(value)) {
+            missingRequiredFields.push(getRequiredFieldLabel(fieldId));
+          }
+        }
+
+        if (activeTemplate) {
+          for (const field of activeTemplate.fields) {
+            if (!field.required) {
+              continue;
+            }
+
+            const rawValue = templateValues[field.id];
+            const hasValue =
+              field.type === "rating" || field.type === "slider"
+                ? Number.isFinite(Number(rawValue))
+                : typeof rawValue === "string"
+                  ? rawValue.trim().length > 0
+                  : rawValue !== undefined && rawValue !== null;
+
+            if (!hasValue) {
+              missingRequiredFields.push(field.label);
+            }
+          }
+        }
+
+        if (missingRequiredFields.length > 0) {
+          setError(`Please fill in all required fields: ${missingRequiredFields.join(", ")}.`);
+          return;
+        }
+
         const commentsWithMeta = buildCommentsWithMeta(resolvedFeedback.comments || "", metaPayload);
+        const sanitizedComments = clampText(commentsWithMeta, 4000);
+        const sanitizedStrengths = clampText(resolvedFeedback.strengths, 2000);
+        const sanitizedImprovements = clampText(resolvedFeedback.improvements, 2000);
+        const sanitizedTypeOfWorkHandled = clampText(resolvedFeedback.typeOfWorkHandled, 500);
+        const sanitizedDifficultyLevel = clampText(resolvedFeedback.difficultyLevel || "Intermediate", 64) || "Intermediate";
+        const sanitizedRecommendation = clampText(resolvedFeedback.recommendation || "Recommended", 120) || "Recommended";
 
         const response = await apiFetch(`${apiBaseUrl}/feedback/company`, {
           method: "POST",
@@ -662,28 +774,45 @@ export default function CompanyFeedbackForm() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            studentId: selectedStudent.id,
-            studentEmail: selectedStudent.email,
-            studentName: selectedStudent.name || selectedStudent.email || "Unknown",
-            role: selectedStudent.Role,
-            college: selectedStudent.COLLEGE,
-            projectTitle: selectedStudent.projectTitle,
-            duration: selectedStudent.duration,
-            startDate: selectedStudent.startDate,
-            endDate: selectedStudent.endDate,
-            typeOfWorkHandled: resolvedFeedback.typeOfWorkHandled ?? "",
-            difficultyLevel: resolvedFeedback.difficultyLevel ?? "Intermediate",
-            overallRating: resolvedFeedback.overallRating ?? 3,
+            studentId: clampText(submissionStudentId, 64),
+            studentEmail: clampText(selectedStudent.email, 254),
+            studentName: clampText(selectedStudent.name || selectedStudent.email || "Unknown", 120) || "Unknown",
+            role: clampText(selectedStudent.Role, 120),
+            college: clampText(selectedStudent.COLLEGE, 150),
+            projectTitle: clampText(selectedStudent.projectTitle, 150),
+            duration: clampText(selectedStudent.duration, 64),
+            startDate: clampText(selectedStudent.startDate, 64),
+            endDate: clampText(selectedStudent.endDate, 64),
+            typeOfWorkHandled: sanitizedTypeOfWorkHandled,
+            difficultyLevel: sanitizedDifficultyLevel,
+            overallRating: clampRating(resolvedFeedback.overallRating),
             ratings: normalizedRatings,
-            strengths: resolvedFeedback.strengths ?? "",
-            improvements: resolvedFeedback.improvements ?? "",
-            comments: commentsWithMeta,
-            recommendation: resolvedFeedback.recommendation ?? "Recommended",
+            strengths: sanitizedStrengths,
+            improvements: sanitizedImprovements,
+            comments: sanitizedComments,
+            recommendation: sanitizedRecommendation,
           }),
         });
 
         if (!response.ok) {
-          throw new Error("Failed to save company feedback");
+          const payload = (await response.json().catch(() => null)) as { detail?: unknown } | null;
+          const detail = payload?.detail;
+          if (Array.isArray(detail)) {
+            const message = detail
+              .map((entry) => {
+                if (entry && typeof entry === "object" && "msg" in entry) {
+                  const path = Array.isArray((entry as { loc?: unknown }).loc)
+                    ? (entry as { loc?: Array<string | number> }).loc?.slice(1).join(".")
+                    : "";
+                  return path ? `${path}: ${(entry as { msg?: string }).msg ?? "Invalid value"}` : (entry as { msg?: string }).msg ?? "Invalid value";
+                }
+                return String(entry);
+              })
+              .join("; ");
+            throw new Error(message || "Failed to save company feedback");
+          }
+
+          throw new Error(typeof detail === "string" && detail.trim() ? detail : "Failed to save company feedback");
         }
 
         const saved = await response.json();
@@ -1342,6 +1471,7 @@ export default function CompanyFeedbackForm() {
                                   onChange={(event) => updateTemplateValue(field.id, event.target.value)}
                                   disabled={isReadOnly}
                                   placeholder={`Enter ${field.label.toLowerCase()}`}
+                                  required={field.required}
                                 />
                               </>
                             )}
@@ -1358,6 +1488,7 @@ export default function CompanyFeedbackForm() {
                                   disabled={isReadOnly}
                                   className="resize-none"
                                   placeholder={`Enter ${field.label.toLowerCase()}`}
+                                  required={field.required}
                                 />
                               </>
                             )}
@@ -1758,9 +1889,29 @@ export default function CompanyFeedbackForm() {
                 )}
 
                 {error && (
-                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
-                    {error}
-                  </div>
+                  <motion.div
+                    role="alert"
+                    aria-live="assertive"
+                    initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                    transition={{ duration: 0.2, ease: "easeOut" }}
+                    className="fixed left-1/2 top-4 z-50 w-[min(92vw,44rem)] -translate-x-1/2 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-red-700 shadow-2xl"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 text-center text-sm font-medium leading-6 sm:text-base">
+                        {error}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setError("")}
+                        className="rounded-full p-1 text-red-500 transition-colors hover:bg-red-100 hover:text-red-700"
+                        aria-label="Dismiss error message"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </motion.div>
                 )}
 
                 {currentFeedback.submitted && !isEditMode && (
