@@ -1,3 +1,4 @@
+import { apiFetch } from "../../lib/api";
 import { motion, AnimatePresence } from "motion/react";
 import { useEffect, useState } from "react";
 import { Button } from "../../components/ui/button";
@@ -389,7 +390,7 @@ export default function CompanyFeedbackForm() {
 
       setIsLoadingStudents(true);
       try {
-        const response = await fetch(`${apiBaseUrl}/students`);
+        const response = await apiFetch(`${apiBaseUrl}/students`);
         if (!response.ok) {
           throw new Error("Failed to load students");
         }
@@ -431,7 +432,7 @@ export default function CompanyFeedbackForm() {
   useEffect(() => {
     const loadFeedback = async () => {
       try {
-        const response = await fetch(`${apiBaseUrl}/feedback/company`);
+        const response = await apiFetch(`${apiBaseUrl}/feedback/company`);
         if (!response.ok) {
           return;
         }
@@ -499,7 +500,7 @@ export default function CompanyFeedbackForm() {
       setIsLoadingStudentFeedback(true);
       setShowStudentSubmittedFeedback(false);
       try {
-        const response = await fetch(
+        const response = await apiFetch(
           `${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(selectedStudent.email)}`
         );
 
@@ -654,7 +655,7 @@ export default function CompanyFeedbackForm() {
 
         const commentsWithMeta = buildCommentsWithMeta(resolvedFeedback.comments || "", metaPayload);
 
-        const response = await fetch(`${apiBaseUrl}/feedback/company`, {
+        const response = await apiFetch(`${apiBaseUrl}/feedback/company`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

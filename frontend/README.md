@@ -23,7 +23,7 @@ The app runs at `http://localhost:5173`.
 | Role    | Email                  | Password |
 |---------|------------------------|----------|
 | Student | student@example.com    | 123456   |
-| Company | admin@example.com      | 123456   |
+| Company | admin@internfeedback.com      | 123456   |
 
 ## Tech Stack
 

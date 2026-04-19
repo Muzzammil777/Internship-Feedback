@@ -13,9 +13,24 @@ class Settings(BaseSettings):
     mongodb_uri: str
     mongodb_db: str = "internship_feedback"
     cors_origins: str = "http://localhost:5173"
+    jwt_secret_key: str = "change-this-in-production"
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60
+    login_rate_limit: str = "8/minute"
+    feedback_rate_limit: str = "10/minute"
+    content_security_policy: str = (
+        "default-src 'self'; "
+        "base-uri 'self'; "
+        "frame-ancestors 'none'; "
+        "form-action 'self'; "
+        "img-src 'self' data: blob:; "
+        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
+        "connect-src 'self'"
+    )
     demo_student_email: str = "student@example.com"
     demo_student_password: str = "123456"
-    demo_company_email: str = "admin@example.com"
+    demo_company_email: str = "admin@internfeedback.com"
     demo_company_password: str = "123456"
 
     model_config = SettingsConfigDict(

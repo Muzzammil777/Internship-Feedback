@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
+import { clearAuthSession, storeAuthSession, AUTH_SESSION_STORAGE_KEY } from "../lib/api";
 
 type UserRole = "student" | "company";
 
@@ -15,6 +16,11 @@ interface User {
   role: UserRole;
 }
 
+interface AuthSession {
+  user: User;
+  accessToken: string;
+}
+
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, selectedRole: UserRole) => Promise<LoginResult>;
@@ -22,32 +28,37 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-const AUTH_USER_STORAGE_KEY = "movicloud-auth-user";
 
 function readStoredUser(): User | null {
   if (typeof window === "undefined") {
     return null;
   }
 
-  const raw = window.localStorage.getItem(AUTH_USER_STORAGE_KEY);
+  const raw = window.localStorage.getItem(AUTH_SESSION_STORAGE_KEY);
   if (!raw) {
     return null;
   }
 
   try {
-    const parsed = JSON.parse(raw) as Partial<User>;
+    const parsed = JSON.parse(raw) as Partial<AuthSession>;
     if (
-      typeof parsed.email === "string" &&
-      typeof parsed.name === "string" &&
-      (parsed.role === "student" || parsed.role === "company")
+      parsed.user &&
+      typeof parsed.user.email === "string" &&
+      typeof parsed.user.name === "string" &&
+      (parsed.user.role === "student" || parsed.user.role === "company") &&
+      typeof parsed.accessToken === "string"
     ) {
-      return { email: parsed.email, name: parsed.name, role: parsed.role };
+      return {
+        email: parsed.user.email,
+        name: parsed.user.name,
+        role: parsed.user.role,
+      };
     }
   } catch {
     // Ignore malformed storage payload and clear below.
   }
 
-  window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+  window.localStorage.removeItem(AUTH_SESSION_STORAGE_KEY);
   return null;
 }
 
@@ -88,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { user: null, error: "invalid_credentials" };
       }
 
-      const data: { email: string; name: string; role: UserRole } = await response.json();
+      const data: { email: string; name: string; role: UserRole; access_token: string } = await response.json();
       if (data.role !== selectedRole) {
         return { user: null, error: "role_mismatch" };
       }
@@ -99,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role,
       };
       setUser(loggedInUser);
-      window.localStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(loggedInUser));
+      storeAuthSession({ user: loggedInUser, accessToken: data.access_token });
       return { user: loggedInUser };
     } catch {
       return { user: null, error: "invalid_credentials" };
@@ -108,9 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem(AUTH_USER_STORAGE_KEY);
-    }
+    clearAuthSession();
   };
 
   return (

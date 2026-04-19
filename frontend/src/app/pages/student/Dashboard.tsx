@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import StatusCard from "../../components/shared/StatusCard";
 import SkillTag from "../../components/shared/SkillTag";
 import { useAuth } from "../../context/AuthContext";
+import { apiFetch } from "../../lib/api";
 import {
   CheckCircle2,
   Clock,
@@ -52,15 +53,15 @@ export default function StudentDashboard() {
       
       try {
         const API_BASE = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
-        const res = await fetch(`${API_BASE}/students/profile/${user.email}`);
+        const res = await apiFetch(`${API_BASE}/students/profile/${user.email}`);
         if (res.ok) {
           const data = await res.json();
           setProfile(data);
 
           if (data.id) {
             const [studentFeedbackRes, companyFeedbackRes] = await Promise.all([
-              fetch(`${API_BASE}/feedback/student?student_email=${encodeURIComponent(data.email)}`),
-              fetch(`${API_BASE}/feedback/company?student_id=${encodeURIComponent(data.id)}`),
+              apiFetch(`${API_BASE}/feedback/student?student_email=${encodeURIComponent(data.email)}`),
+              apiFetch(`${API_BASE}/feedback/company?student_id=${encodeURIComponent(data.id)}`),
             ]);
 
             if (studentFeedbackRes.ok) {

@@ -22,7 +22,7 @@ The app includes profile management, feedback submission and review, and PDF rep
 - Backend is implemented and running (not planned)
 - Frontend is connected to backend endpoints
 - Authentication is database-backed email/password login
-- JWT/session auth is not implemented yet (backend returns a demo token)
+- JWT access tokens are issued by the backend and propagated by the frontend
 - Form templates are currently persisted in browser localStorage (frontend)
 
 ## Tech Stack
@@ -44,6 +44,9 @@ The app includes profile management, feedback submission and review, and PDF rep
 - Uvicorn
 - Pydantic + pydantic-settings
 - Motor (MongoDB async driver)
+- passlib[bcrypt]
+- python-jose[cryptography]
+- slowapi
 - python-dotenv
 
 ## Repository Structure
@@ -80,6 +83,9 @@ FastAPI app bootstraps in backend/app/main.py and includes:
 
 - CORS middleware using CORS_ORIGINS from env
 - Startup DB readiness probe (ping + demo user seed)
+- JWT auth with protected student and feedback routes
+- Login and feedback rate limiting with slowapi
+- Security headers middleware
 - Routers: /health, /auth, /students, /feedback
 
 ### Implemented Endpoints
@@ -106,8 +112,10 @@ FastAPI app bootstraps in backend/app/main.py and includes:
 Notes:
 
 - Student create also creates matching user login record
+- Passwords are hashed before storage
 - Profile includes photo, skills, tasks, internship metadata
 - profilePhoto is stored as base64 data URL string
+- Sensitive student and feedback routes require a Bearer token
 
 #### Feedback
 
@@ -122,6 +130,7 @@ Notes:
 - Legacy fallback fields are still accepted
 - Company feedback writes student status to completed
 - Route has in-memory fallback if MongoDB becomes unavailable
+- Company feedback POST is company-only; student feedback POST is student-only
 
 ### Data and Schema Layers
 
@@ -151,13 +160,13 @@ Root layout provides responsive sidebar (desktop collapse + mobile drawer).
 ### Auth Flow
 
 - Login calls POST /auth/login
-- User is persisted in localStorage
+- User and access token are persisted in localStorage
 - Role mismatch is blocked on client side
 
 Important credential detail:
 
-- Frontend quick-fill company credential currently uses admin@internfeedback.com
-- Backend default demo company credential in backend/.env.example is admin@example.com
+- Frontend quick-fill company credential uses admin@internfeedback.com
+- Backend default demo company credential in backend/.env.example is admin@internfeedback.com
 
 If you rely on demo login, align these values.
 
@@ -186,9 +195,14 @@ MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<database>?retryWrites=tru
 MONGODB_DB=internship_feedback
 CORS_ORIGINS=http://localhost:5173
 APP_NAME=Internship Feedback API
+JWT_SECRET_KEY=change-this-in-production
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+LOGIN_RATE_LIMIT=8/minute
+FEEDBACK_RATE_LIMIT=10/minute
 DEMO_STUDENT_EMAIL=student@example.com
 DEMO_STUDENT_PASSWORD=123456
-DEMO_COMPANY_EMAIL=admin@example.com
+DEMO_COMPANY_EMAIL=admin@internfeedback.com
 DEMO_COMPANY_PASSWORD=123456
 ```
 
@@ -240,11 +254,9 @@ URLs:
 
 ## Known Gaps and Next Improvements
 
-- Replace demo token auth with JWT and protected routes
 - Move form templates from browser localStorage to backend persistence
-- Add authorization guards on backend endpoints by role
 - Add automated tests for auth, feedback validation, and student lifecycle
-- Standardize demo credentials between frontend quick-fill and backend defaults
+- Add token refresh if longer-lived sessions are needed
 
 ## License
 

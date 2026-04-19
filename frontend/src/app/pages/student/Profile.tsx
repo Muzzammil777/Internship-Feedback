@@ -6,6 +6,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import SkillTag from "../../components/shared/SkillTag";
 import { useAuth } from "../../context/AuthContext";
+import { apiFetch } from "../../lib/api";
 import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,7 +46,7 @@ export default function StudentProfile() {
       if (!user?.email) return;
       
       try {
-        const res = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
+        const res = await apiFetch(`${apiBaseUrl}/students/profile/${user.email}`);
         if (res.ok) {
           const data = await res.json();
           setFormData({
@@ -154,7 +155,7 @@ export default function StudentProfile() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`, {
+      const response = await apiFetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

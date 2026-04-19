@@ -16,6 +16,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { useAuth } from "../../context/AuthContext";
+import { apiFetch } from "../../lib/api";
 
 interface StudentProfile {
   id: string;
@@ -207,7 +208,7 @@ export default function StudentFeedback() {
       if (!user?.email) return;
 
       let profileDepartment = "";
-      const profileRes = await fetch(`${apiBaseUrl}/students/profile/${user.email}`);
+      const profileRes = await apiFetch(`${apiBaseUrl}/students/profile/${user.email}`);
       let studentId = "";
       if (profileRes.ok) {
         const profileData = (await profileRes.json()) as StudentProfile;
@@ -218,14 +219,14 @@ export default function StudentFeedback() {
       }
 
       if (studentId) {
-        const companyRes = await fetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(studentId)}`);
+        const companyRes = await apiFetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(studentId)}`);
         if (companyRes.ok) {
           const list = (await companyRes.json()) as CompanyFeedback[];
           setCompanyFeedback(list[0] ?? null);
         }
       }
 
-      const ownRes = await fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
+      const ownRes = await apiFetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`);
       if (ownRes.ok) {
         const list = (await ownRes.json()) as StudentFeedbackRecord[];
         if (list.length > 0) {
@@ -304,7 +305,7 @@ export default function StudentFeedback() {
         })),
       }));
 
-      const response = await fetch(`${apiBaseUrl}/feedback/student`, {
+      const response = await apiFetch(`${apiBaseUrl}/feedback/student`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

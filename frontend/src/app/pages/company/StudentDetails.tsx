@@ -14,16 +14,14 @@ import {
   Search,
   Users,
   Calendar,
-  MapPin,
   Plus,
   X,
-  Mail,
-  Lock,
   CheckCircle2,
   Trash2,
 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { apiFetch } from "../../lib/api";
 
 interface Task {
   id: string;
@@ -81,8 +79,8 @@ export default function CompanyStudentDetails() {
       setIsLoadingStudents(true);
       try {
         const [studentsResponse, feedbackResponse] = await Promise.all([
-          fetch(`${API_BASE}/students`),
-          fetch(`${API_BASE}/feedback/company`),
+          apiFetch(`${API_BASE}/students`),
+          apiFetch(`${API_BASE}/feedback/company`),
         ]);
 
         if (!studentsResponse.ok) {
@@ -100,11 +98,11 @@ export default function CompanyStudentDetails() {
 
         const normalizedStudents = data.map((student) => ({
           ...student,
-          status: completedStudentIds.has(student.id)
+          status: (completedStudentIds.has(student.id)
             ? "completed"
             : student.status === "active"
               ? "active"
-              : "pending",
+              : "pending") as Student["status"],
         }));
 
         setStudents(normalizedStudents);
@@ -139,7 +137,7 @@ export default function CompanyStudentDetails() {
     setApiError("");
 
     try {
-      const res = await fetch(`${API_BASE}/students`, {
+      const res = await apiFetch(`${API_BASE}/students`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -201,7 +199,7 @@ export default function CompanyStudentDetails() {
     setApiError("");
 
     try {
-      const response = await fetch(
+      const response = await apiFetch(
         `${API_BASE}/students/${encodeURIComponent(selectedStudent.id)}`,
         { method: "DELETE" }
       );
@@ -311,7 +309,7 @@ export default function CompanyStudentDetails() {
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                placeholder="Search by name, Role, or COLLEGE..."
+                placeholder="Search by Name, Role, or College..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-12 h-14 text-base shadow-md"
@@ -319,122 +317,130 @@ export default function CompanyStudentDetails() {
             </div>
           </motion.div>
 
-          {/* Student Cards Grid */}
-          <div className="grid grid-cols-1 gap-6">
-            <AnimatePresence mode="popLayout">
-              {filteredStudents.map((student, index) => {
-                // Generate initials for avatar
-                const initials = student.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join("")
-                  .toUpperCase();
-
-                // Assign different gradient colors based on index
-                const avatarGradients = [
-                  "from-indigo-500 to-purple-600",
-                  "from-teal-500 to-cyan-600",
-                  "from-pink-500 to-rose-600",
-                  "from-amber-500 to-orange-600",
-                ];
-                const gradient = avatarGradients[index % avatarGradients.length];
-
-                return (
-                  <motion.div
-                    key={student.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95 }}
-                    transition={{ duration: 0.3, delay: index * 0.05 }}
-                    whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-                    onClick={() => setSelectedStudent(student)}
-                    className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-5">
-                      {/* LEFT - Profile Avatar */}
-                      <div className="flex-shrink-0">
-                        <StudentAvatar
-                          name={student.name}
-                          size="lg"
-                          gradient={gradient}
-                          withRing={true}
-                          photoUrl={student.profilePhoto}
-                        />
-                      </div>
-
-                      {/* RIGHT - Student Information */}
-                      <div className="flex-1 min-w-0">
-                        {/* Top Row - Name & Status */}
-                        <div className="flex items-center justify-between gap-3 mb-2">
-                          <h3 className="text-xl font-bold text-foreground truncate">
-                            {student.name}
-                          </h3>
-                          <span
-                            className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-bold border ${
-                              statusColors[student.status]
-                            }`}
-                          >
-                            {student.status.charAt(0).toUpperCase() +
-                              student.status.slice(1)}
-                          </span>
-                        </div>
-
-                        {/* Role & COLLEGE */}
-                        <div className="mb-3">
-                          <p className="text-sm font-semibold text-foreground mb-1">
-                            {student.Role}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {student.COLLEGE}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Department: {student.COLLEGE_DEPARTMENT || "N/A"}
-                          </p>
-                        </div>
-
-                        {/* Duration Info */}
-                        <div className="flex items-center justify-between">
-                          <div className="text-sm text-muted-foreground">
-                            <span className="font-medium">Duration: </span>
-                            <span className="font-semibold text-foreground">
-                              {student.duration}
-                            </span>
-                            <span className="mx-2">•</span>
-                            <span>
-                              {student.startDate} - {student.endDate}
-                            </span>
-                          </div>
-
-                          {/* View Details Action */}
-                          <div className="flex items-center gap-1 text-primary flex-shrink-0">
-                            <span className="text-sm font-bold group-hover:underline">
-                              View Details
-                            </span>
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
-
-          {filteredStudents.length === 0 && (
+          {isLoadingStudents ? (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center py-16"
+              className="flex min-h-[320px] items-center justify-center rounded-2xl border border-border bg-card shadow-sm"
             >
-              <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-              <h3 className="text-lg font-semibold text-foreground mb-2">
-                No students found
-              </h3>
-              <p className="text-muted-foreground">
-                Try adjusting your search criteria
-              </p>
+              <div className="flex items-center gap-3 text-muted-foreground">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="text-sm font-medium">Loading students...</span>
+              </div>
             </motion.div>
+          ) : (
+            <>
+              {/* Student Cards Grid */}
+              <div className="grid grid-cols-1 gap-6">
+                <AnimatePresence mode="popLayout">
+                  {filteredStudents.map((student, index) => {
+                    // Assign different gradient colors based on index
+                    const avatarGradients = [
+                      "from-indigo-500 to-purple-600",
+                      "from-teal-500 to-cyan-600",
+                      "from-pink-500 to-rose-600",
+                      "from-amber-500 to-orange-600",
+                    ];
+                    const gradient = avatarGradients[index % avatarGradients.length];
+
+                    return (
+                      <motion.div
+                        key={student.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        whileHover={{ y: -2, boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
+                        onClick={() => setSelectedStudent(student)}
+                        className="bg-card border border-border rounded-xl p-5 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                      >
+                        <div className="flex items-center gap-5">
+                          {/* LEFT - Profile Avatar */}
+                          <div className="flex-shrink-0">
+                            <StudentAvatar
+                              name={student.name}
+                              size="lg"
+                              gradient={gradient}
+                              withRing={true}
+                              photoUrl={student.profilePhoto}
+                            />
+                          </div>
+
+                          {/* RIGHT - Student Information */}
+                          <div className="flex-1 min-w-0">
+                            {/* Top Row - Name & Status */}
+                            <div className="flex items-center justify-between gap-3 mb-2">
+                              <h3 className="text-xl font-bold text-foreground truncate">
+                                {student.name}
+                              </h3>
+                              <span
+                                className={`flex-shrink-0 px-3 py-1 rounded-lg text-xs font-bold border ${
+                                  statusColors[student.status]
+                                }`}
+                              >
+                                {student.status.charAt(0).toUpperCase() +
+                                  student.status.slice(1)}
+                              </span>
+                            </div>
+
+                            {/* Role & COLLEGE */}
+                            <div className="mb-3">
+                              <p className="text-sm font-semibold text-foreground mb-1">
+                                {student.Role}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {student.COLLEGE}
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Department: {student.COLLEGE_DEPARTMENT || "N/A"}
+                              </p>
+                            </div>
+
+                            {/* Duration Info */}
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm text-muted-foreground">
+                                <span className="font-medium">Duration: </span>
+                                <span className="font-semibold text-foreground">
+                                  {student.duration}
+                                </span>
+                                <span className="mx-2">•</span>
+                                <span>
+                                  {student.startDate} - {student.endDate}
+                                </span>
+                              </div>
+
+                              {/* View Details Action */}
+                              <div className="flex items-center gap-1 text-primary flex-shrink-0">
+                                <span className="text-sm font-bold group-hover:underline">
+                                  View Details
+                                </span>
+                                <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
+              </div>
+
+              {filteredStudents.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-center py-16"
+                >
+                  <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    No students found
+                  </h3>
+                  <p className="text-muted-foreground">
+                    Try adjusting your search criteria
+                  </p>
+                </motion.div>
+              )}
+            </>
           )}
         </div>
 
