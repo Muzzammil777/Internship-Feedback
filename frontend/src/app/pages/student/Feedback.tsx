@@ -197,7 +197,7 @@ export default function StudentFeedback() {
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
   const [answers, setAnswers] = useState<Record<string, QuestionValue>>({});
-  const [department, setDepartment] = useState("");
+  const [role, setRole] = useState("");
 
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -207,15 +207,15 @@ export default function StudentFeedback() {
     const load = async () => {
       if (!user?.email) return;
 
-      let profileDepartment = "";
+      let profileRole = "";
       const profileRes = await apiFetch(`${apiBaseUrl}/students/profile/${user.email}`);
       let studentId = "";
       if (profileRes.ok) {
         const profileData = (await profileRes.json()) as StudentProfile;
         setProfile(profileData);
         studentId = profileData.id;
-        profileDepartment = profileData.role_title || profileData.Role || "";
-        setDepartment(profileDepartment);
+        profileRole = profileData.role_title || profileData.Role || "";
+        setRole(profileRole);
       }
 
       if (studentId) {
@@ -231,7 +231,7 @@ export default function StudentFeedback() {
         const list = (await ownRes.json()) as StudentFeedbackRecord[];
         if (list.length > 0) {
           const latest = list[0];
-          setDepartment(latest.department || profileDepartment || "");
+          setRole(latest.department || profileRole || "");
           if (latest.sections) {
             setAnswers(flattenSaved(latest.sections));
           } else {
@@ -287,8 +287,8 @@ export default function StudentFeedback() {
       return;
     }
 
-    if (!department.trim()) {
-      setError("Please enter your department.");
+    if (!role.trim()) {
+      setError("Please enter your role.");
       setIsSaving(false);
       return;
     }
@@ -311,7 +311,7 @@ export default function StudentFeedback() {
         body: JSON.stringify({
           studentEmail: user?.email ?? "",
           studentName: user?.name ?? "Student",
-          department: department.trim(),
+          department: role.trim(),
           companyName: profile?.company_name || profile?.companyName || "Organization",
           sections: payload,
           strengths: typeof answers.likedMost === "string" ? answers.likedMost : "",
@@ -582,12 +582,12 @@ export default function StudentFeedback() {
 
             <form onSubmit={submit} className="space-y-6">
               <div className="bg-card border border-border rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
-                <Label className="font-semibold">Department *</Label>
+                <Label className="font-semibold">Role *</Label>
                 <Input
-                  value={department}
-                  onChange={(event) => setDepartment(event.target.value)}
+                  value={role}
+                  onChange={(event) => setRole(event.target.value)}
                   disabled={isSubmitted}
-                  placeholder="Enter your department"
+                  placeholder="Enter your role"
                 />
               </div>
 

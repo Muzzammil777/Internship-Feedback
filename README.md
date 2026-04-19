@@ -1,5 +1,7 @@
 # MoviCloud Internship Feedback System
 
+Detailed project documentation is available in [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
+
 Full-stack internship evaluation platform with:
 
 - Frontend: React + TypeScript + Vite
