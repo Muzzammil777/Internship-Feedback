@@ -94,6 +94,8 @@ def _serialize(doc: dict) -> dict:
     serialized.pop("password_hash", None)
     serialized.pop("student_id", None)
 
+    serialized.setdefault("name", "")
+    serialized.setdefault("email", "")
     serialized.setdefault("tasks", [])
     serialized.setdefault("skills", [])
     serialized.setdefault("profilePhoto", "")

@@ -7,7 +7,7 @@ from uuid import uuid4
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 from pymongo.errors import PyMongoError
 
 from app.core.database import get_collection, get_database
@@ -91,7 +91,7 @@ class CompanyFeedbackCreate(BaseModel):
 
     studentId: str = Field(min_length=1, max_length=64)
     studentEmail: str = Field(default="", max_length=254)
-    studentName: str = Field(min_length=1, max_length=120)
+    studentName: str = Field(default="", max_length=120)
     role: str = Field(default="", max_length=120)
     college: str = Field(default="", max_length=150)
     projectTitle: str = Field(default="", max_length=150)
@@ -100,12 +100,29 @@ class CompanyFeedbackCreate(BaseModel):
     endDate: str = Field(default="", max_length=64)
     typeOfWorkHandled: str = Field(default="", max_length=500)
     difficultyLevel: str = Field(default="Intermediate", max_length=64)
-    overallRating: int = Field(ge=1, le=5)
+    overallRating: int = Field(default=3, ge=1, le=5)
     ratings: CompanyRatings
     strengths: str = Field(default="", max_length=2000)
     improvements: str = Field(default="", max_length=2000)
     comments: str = Field(default="", max_length=4000)
     recommendation: str = Field(default="Recommended", max_length=120)
+
+    @field_validator(
+        "studentEmail", "studentName", "role", "college", "projectTitle",
+        "duration", "startDate", "endDate", "typeOfWorkHandled", "difficultyLevel",
+        "strengths", "improvements", "comments", "recommendation",
+        mode="before",
+    )
+    @classmethod
+    def coerce_none_to_empty_string(cls, v: object) -> str:
+        return "" if v is None else v  # type: ignore[return-value]
+
+    @field_validator("overallRating", mode="before")
+    @classmethod
+    def coerce_none_rating(cls, v: object) -> int:
+        if v is None:
+            return 3
+        return v  # type: ignore[return-value]
 
 
 class StudentFeedbackQuestion(BaseModel):
