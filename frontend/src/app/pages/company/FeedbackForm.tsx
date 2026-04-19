@@ -649,6 +649,7 @@ export default function CompanyFeedbackForm() {
         else if (normalizedLabel.includes("improvement") || normalizedLabel.includes("growth")) mapped.improvements = textValue;
         else if (normalizedLabel.includes("recommend")) mapped.recommendation = textValue;
         else if (normalizedLabel.includes("comment") || normalizedLabel.includes("feedback") || normalizedLabel.includes("remark")) mapped.comments = textValue;
+        else if (normalizedLabel.includes("type of work") || normalizedLabel.includes("work handled")) mapped.typeOfWorkHandled = textValue;
         else extraEntries.push(`${field.label}: ${textValue}`);
       }
     }
@@ -1773,6 +1774,17 @@ export default function CompanyFeedbackForm() {
                           onChange={(val) => updateRating("ownershipOfTasks", val)}
                           disabled={isReadOnly}
                         />
+                        <div className="space-y-2">
+                          <Label className="font-semibold">What type of work did the intern handle?</Label>
+                          <Textarea
+                            rows={3}
+                            placeholder="Describe the type of work, tasks, or projects assigned to the intern."
+                            value={currentFeedback.typeOfWorkHandled}
+                            onChange={(e) => updateField("typeOfWorkHandled", e.target.value)}
+                            disabled={isReadOnly}
+                            className="resize-none"
+                          />
+                        </div>
                         <div className="space-y-2">
                           <Label className="font-semibold">What level of work did the intern handle?</Label>
                           <Select
