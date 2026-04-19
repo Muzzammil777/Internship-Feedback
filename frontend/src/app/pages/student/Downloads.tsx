@@ -1,30 +1,10 @@
-import { AnimatePresence, motion } from "motion/react";
+import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Download, FileText, Award, Building2, File, Check } from "lucide-react";
-import LoadingAnimation from "../../components/shared/LoadingAnimation";
+import { Download, FileText, Award, Building2, File } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import { apiFetch } from "../../lib/api";
-
-type PdfLibraries = {
-  jsPDF: (typeof import("jspdf"))["jsPDF"];
-  html2canvas: (typeof import("html2canvas"))["default"];
-};
-
-let pdfLibrariesPromise: Promise<PdfLibraries> | null = null;
-
-const loadPdfLibraries = async (): Promise<PdfLibraries> => {
-  if (!pdfLibrariesPromise) {
-    pdfLibrariesPromise = Promise.all([import("jspdf"), import("html2canvas")]).then(
-      ([jspdfModule, html2canvasModule]) => ({
-        jsPDF: jspdfModule.jsPDF,
-        html2canvas: html2canvasModule.default,
-      }),
-    );
-  }
-
-  return pdfLibrariesPromise;
-};
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 interface TaskItem {
   id: string;
@@ -40,7 +20,6 @@ interface StudentProfile {
   phone?: string;
   Role?: string;
   COLLEGE?: string;
-  COLLEGE_DEPARTMENT?: string;
   startDate?: string;
   endDate?: string;
   duration?: string;
@@ -387,35 +366,7 @@ export default function StudentDownloads() {
   const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
   const [studentFeedback, setStudentFeedback] = useState<StudentFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [showGenerationSuccess, setShowGenerationSuccess] = useState(false);
-  const [generationLabel, setGenerationLabel] = useState("");
-  const [generationSuccessLabel, setGenerationSuccessLabel] = useState("");
   const logoDataUrlRef = useRef<string | null>(null);
-
-  const runWithPdfGeneration = async (
-    label: string,
-    action: () => Promise<void>,
-    successLabel: string,
-  ) => {
-    setGenerationLabel(label);
-    setGenerationSuccessLabel("");
-    setShowGenerationSuccess(false);
-    setIsGeneratingPdf(true);
-    try {
-      await action();
-      setGenerationSuccessLabel(successLabel);
-      setShowGenerationSuccess(true);
-      await new Promise<void>((resolve) => {
-        window.setTimeout(() => resolve(), 900);
-      });
-    } finally {
-      setIsGeneratingPdf(false);
-      setShowGenerationSuccess(false);
-      setGenerationLabel("");
-      setGenerationSuccessLabel("");
-    }
-  };
 
   useEffect(() => {
     const loadDownloadsData = async () => {
@@ -425,7 +376,7 @@ export default function StudentDownloads() {
       }
 
       try {
-        const profileRes = await apiFetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`);
+        const profileRes = await fetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`);
         if (!profileRes.ok) {
           setIsLoading(false);
           return;
@@ -435,8 +386,8 @@ export default function StudentDownloads() {
         setProfile(profileData);
 
         const [companyFeedbackRes, studentFeedbackRes] = await Promise.all([
-          apiFetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(profileData.id)}`),
-          apiFetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`),
+          fetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(profileData.id)}`),
+          fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`),
         ]);
 
         if (companyFeedbackRes.ok) {
@@ -530,8 +481,6 @@ export default function StudentDownloads() {
     if (!profile) {
       return;
     }
-
-    const { jsPDF, html2canvas } = await loadPdfLibraries();
 
     const reportDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -858,7 +807,6 @@ export default function StudentDownloads() {
           <div class="card student-grid">
             <div class="field"><span class="label">Student Name</span><span class="value">${escapeHtml(studentName)}</span></div>
             <div class="field"><span class="label">Email</span><span class="value">${escapeHtml(profile.email || "N/A")}</span></div>
-            <div class="field"><span class="label">Department</span><span class="value">${escapeHtml(profile.COLLEGE_DEPARTMENT || "N/A")}</span></div>
             <div class="field"><span class="label">Project</span><span class="value">${escapeHtml(companyFeedback?.projectTitle || "N/A")}</span></div>
             <div class="field"><span class="label">Internship Duration</span><span class="value">${escapeHtml(companyFeedback?.duration || profile.duration || "N/A")}</span></div>
           </div>
@@ -1032,8 +980,6 @@ export default function StudentDownloads() {
     if (!profile) {
       return;
     }
-
-    const { jsPDF, html2canvas } = await loadPdfLibraries();
 
     const skills = profile.skills ?? [];
     const tasks = profile.tasks ?? [];
@@ -1348,7 +1294,6 @@ export default function StudentDownloads() {
               <div class="hero-name">${escapeHtml(profile.name)}</div>
               <div class="hero-role">${escapeHtml(profile.Role || "Intern")}</div>
               <div class="hero-meta">${escapeHtml(profile.COLLEGE || "Institution not specified")}</div>
-              <div class="hero-meta">${escapeHtml(profile.COLLEGE_DEPARTMENT || "Department not specified")}</div>
               <div class="hero-meta">${escapeHtml(profile.email || "Email not available")}</div>
             </div>
           </div>
@@ -1367,7 +1312,6 @@ export default function StudentDownloads() {
             <div class="details-column">
               <div class="detail-item"><div class="detail-label">Role</div><div class="detail-value">${escapeHtml(profile.Role || "N/A")}</div></div>
               <div class="detail-item"><div class="detail-label">College</div><div class="detail-value">${escapeHtml(profile.COLLEGE || "N/A")}</div></div>
-              <div class="detail-item"><div class="detail-label">Department</div><div class="detail-value">${escapeHtml(profile.COLLEGE_DEPARTMENT || "N/A")}</div></div>
               <div class="detail-item"><div class="detail-label">Status</div><div class="detail-value">${escapeHtml(profile.status || "N/A")}</div></div>
               <div class="detail-item"><div class="detail-label">Duration</div><div class="detail-value">${escapeHtml(profile.duration || "N/A")}</div></div>
               <div class="detail-item"><div class="detail-label">Start Date</div><div class="detail-value">${escapeHtml(profile.startDate || "N/A")}</div></div>
@@ -1380,7 +1324,7 @@ export default function StudentDownloads() {
 
         <hr class="divider" />
 
-        <section class="section skills-section">
+        <section class="section">
           <h2 class="section-title"><span class="icon">◉</span>Skills</h2>
           <div class="card">
             <div class="skills-wrap">${skillChipsMarkup}</div>
@@ -1427,27 +1371,11 @@ export default function StudentDownloads() {
     const contentHeightMm = pageHeight - footerHeightMm;
     const contentHeightPx = Math.floor(contentHeightMm / mmPerPx);
 
-    const reportScale = canvas.width / reportElement.scrollWidth;
-    const skillsSection = reportElement.querySelector(".skills-section") as HTMLElement | null;
-    const forcedBreakStartPx = skillsSection
-      ? Math.round(skillsSection.offsetTop * reportScale)
-      : null;
-
     const pageSlices: Array<{ startPx: number; heightPx: number }> = [];
     let yOffsetPx = 0;
 
     while (yOffsetPx < canvas.height) {
-      let sliceEndPx = Math.min(yOffsetPx + contentHeightPx, canvas.height);
-
-      // Keep the full Skills section on the next page if the current slice would cut through it.
-      if (forcedBreakStartPx !== null && yOffsetPx < forcedBreakStartPx && sliceEndPx > forcedBreakStartPx) {
-        sliceEndPx = forcedBreakStartPx;
-      }
-
-      if (sliceEndPx <= yOffsetPx) {
-        sliceEndPx = Math.min(yOffsetPx + contentHeightPx, canvas.height);
-      }
-
+      const sliceEndPx = Math.min(yOffsetPx + contentHeightPx, canvas.height);
       pageSlices.push({
         startPx: yOffsetPx,
         heightPx: sliceEndPx - yOffsetPx,
@@ -1507,8 +1435,6 @@ export default function StudentDownloads() {
     if (!profile) {
       return;
     }
-
-    const { jsPDF, html2canvas } = await loadPdfLibraries();
 
     const reportDate = new Date().toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -1764,7 +1690,6 @@ export default function StudentDownloads() {
           <div class="student-info-grid">
             <div class="info-item"><div class="info-label">Student Name</div><div class="info-value">${escapeHtml(profile.name || "N/A")}</div></div>
             <div class="info-item"><div class="info-label">Email</div><div class="info-value">${escapeHtml(profile.email || "N/A")}</div></div>
-            <div class="info-item"><div class="info-label">Department</div><div class="info-value">${escapeHtml(profile.COLLEGE_DEPARTMENT || "N/A")}</div></div>
             <div class="info-item"><div class="info-label">Company</div><div class="info-value">${escapeHtml(companyName)}</div></div>
           </div>
         </section>
@@ -1923,7 +1848,15 @@ export default function StudentDownloads() {
   }, [companyFeedback, profile, studentFeedback]);
 
   if (isLoading) {
-    return <LoadingAnimation title="Loading downloads" description="Preparing your reports and certificates..." />;
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
+        />
+      </div>
+    );
   }
 
   const colorClasses = {
@@ -2014,18 +1947,7 @@ export default function StudentDownloads() {
                       </div>
                     </div>
                   </div>
-                    <Button
-                      className="flex items-center gap-2 shadow-md"
-                      size="lg"
-                      onClick={() =>
-                        void runWithPdfGeneration(
-                          `Generating ${item.title}...`,
-                          item.onDownload,
-                          `${item.title} downloaded successfully.`,
-                        )
-                      }
-                      disabled={isGeneratingPdf}
-                    >
+                    <Button className="flex items-center gap-2 shadow-md" size="lg" onClick={() => void item.onDownload()}>
                     <Download className="w-4 h-4" />
                     Download
                   </Button>
@@ -2048,88 +1970,18 @@ export default function StudentDownloads() {
             className="flex items-center gap-2 shadow-md hover:shadow-lg"
             onClick={() => {
               void (async () => {
-                await runWithPdfGeneration("Generating all reports...", async () => {
-                  for (const [index, item] of downloadItems.entries()) {
-                    setGenerationLabel(`Generating ${item.title} (${index + 1}/${downloadItems.length})...`);
-                    await item.onDownload();
-                  }
-                }, "All files downloaded successfully.");
+                for (const item of downloadItems) {
+                  await item.onDownload();
+                }
               })();
             }}
-            disabled={downloadItems.length === 0 || isGeneratingPdf}
+            disabled={downloadItems.length === 0}
           >
             <Download className="w-5 h-5" />
             Download All Files
           </Button>
         </motion.div>
       </div>
-
-      <AnimatePresence>
-        {isGeneratingPdf && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 bg-background/65 backdrop-blur-[2px] flex items-center justify-center px-4"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 12, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.98 }}
-              transition={{ duration: 0.22, ease: "easeOut" }}
-              className="w-full max-w-sm bg-card border border-border rounded-2xl shadow-2xl p-6 text-center"
-            >
-              <AnimatePresence mode="wait">
-                {showGenerationSuccess ? (
-                  <motion.div
-                    key="pdf-success"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <motion.div
-                      initial={{ scale: 0.7, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 16 }}
-                      className="relative mx-auto mb-4 w-14 h-14 rounded-full bg-emerald-100 flex items-center justify-center"
-                    >
-                      <motion.div
-                        initial={{ scale: 0.8, opacity: 0.6 }}
-                        animate={{ scale: 1.25, opacity: 0 }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
-                        className="absolute inset-0 rounded-full border-2 border-emerald-300"
-                      />
-                      <Check className="w-7 h-7 text-emerald-600" />
-                    </motion.div>
-                    <p className="text-base font-semibold text-foreground">Download complete</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {generationSuccessLabel || "Your file is ready."}
-                    </p>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="pdf-loading"
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2 }}
-                    className="w-full"
-                  >
-                    <LoadingAnimation
-                      compact
-                      title="Preparing your PDF"
-                      description={generationLabel || "Please wait..."}
-                      className="px-0 py-0 min-h-0"
-                    />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
