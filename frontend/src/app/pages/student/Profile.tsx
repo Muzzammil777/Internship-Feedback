@@ -560,7 +560,7 @@ export default function StudentProfile() {
                     <button
                       type="button"
                       onClick={() => removeTask(task.id)}
-                      className="absolute -top-3 -right-3 w-8 h-8 rounded-xl bg-red-500 flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+                      className="absolute top-2 right-2 sm:-top-3 sm:-right-3 w-8 h-8 rounded-xl bg-red-500 flex items-center justify-center shadow-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity hover:bg-red-600"
                     >
                       <X className="w-4 h-4 text-white" />
                     </button>

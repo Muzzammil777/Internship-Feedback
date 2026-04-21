@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Download, FileText, Award, Building2, File } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { API_BASE_URL, apiFetch } from "../../lib/api";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -360,7 +361,7 @@ function buildStudentFeedbackSections(feedback: StudentFeedback | null): Student
 }
 
 export default function StudentDownloads() {
-  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
+  const apiBaseUrl = API_BASE_URL;
   const { user } = useAuth();
   const [profile, setProfile] = useState<StudentProfile | null>(null);
   const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
@@ -376,7 +377,7 @@ export default function StudentDownloads() {
       }
 
       try {
-        const profileRes = await fetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`);
+        const profileRes = await apiFetch(`${apiBaseUrl}/students/profile/${encodeURIComponent(user.email)}`);
         if (!profileRes.ok) {
           setIsLoading(false);
           return;
@@ -386,8 +387,8 @@ export default function StudentDownloads() {
         setProfile(profileData);
 
         const [companyFeedbackRes, studentFeedbackRes] = await Promise.all([
-          fetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(profileData.id)}`),
-          fetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`),
+          apiFetch(`${apiBaseUrl}/feedback/company?student_id=${encodeURIComponent(profileData.id)}`),
+          apiFetch(`${apiBaseUrl}/feedback/student?student_email=${encodeURIComponent(user.email)}`),
         ]);
 
         if (companyFeedbackRes.ok) {
