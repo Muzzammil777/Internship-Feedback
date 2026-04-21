@@ -1923,15 +1923,15 @@ export default function StudentDownloads() {
                 }}
                 className="bg-card border border-border rounded-2xl p-6 shadow-md hover:shadow-xl transition-shadow"
               >
-                <div className="flex items-start justify-between gap-6">
-                  <div className="flex items-start gap-5 flex-1">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 sm:gap-6">
+                  <div className="flex items-start gap-5 flex-1 min-w-0">
                     <motion.div
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       className={`p-4 rounded-xl ${colors.bg} text-white shadow-lg ${colors.shadow}`}
                     >
                       <Icon className="w-7 h-7" />
                     </motion.div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-bold text-foreground mb-2">
                         {item.title}
                       </h3>
@@ -1948,7 +1948,11 @@ export default function StudentDownloads() {
                       </div>
                     </div>
                   </div>
-                    <Button className="flex items-center gap-2 shadow-md" size="lg" onClick={() => void item.onDownload()}>
+                  <Button
+                    className="flex w-full sm:w-auto items-center justify-center gap-2 shadow-md"
+                    size="lg"
+                    onClick={() => void item.onDownload()}
+                  >
                     <Download className="w-4 h-4" />
                     Download
                   </Button>
