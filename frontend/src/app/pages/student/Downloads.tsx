@@ -1,7 +1,7 @@
 import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
-import { Download, FileText, Award, Building2, File } from "lucide-react";
+import { Download, FileText, Award, Building2, File, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL, apiFetch } from "../../lib/api";
 import { jsPDF } from "jspdf";
@@ -367,6 +367,8 @@ export default function StudentDownloads() {
   const [companyFeedback, setCompanyFeedback] = useState<CompanyFeedback | null>(null);
   const [studentFeedback, setStudentFeedback] = useState<StudentFeedback | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeDownloadFileName, setActiveDownloadFileName] = useState<string | null>(null);
+  const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const logoDataUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -1848,6 +1850,38 @@ export default function StudentDownloads() {
     ];
   }, [companyFeedback, profile, studentFeedback]);
 
+  const isAnyDownloadInProgress = isDownloadingAll || activeDownloadFileName !== null;
+
+  const handleDownloadItem = async (item: DownloadItem) => {
+    if (isAnyDownloadInProgress) {
+      return;
+    }
+
+    setActiveDownloadFileName(item.fileName);
+    try {
+      await item.onDownload();
+    } finally {
+      setActiveDownloadFileName(null);
+    }
+  };
+
+  const handleDownloadAll = async () => {
+    if (isAnyDownloadInProgress || downloadItems.length === 0) {
+      return;
+    }
+
+    setIsDownloadingAll(true);
+    try {
+      for (const item of downloadItems) {
+        setActiveDownloadFileName(item.fileName);
+        await item.onDownload();
+      }
+    } finally {
+      setActiveDownloadFileName(null);
+      setIsDownloadingAll(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -1951,10 +1985,17 @@ export default function StudentDownloads() {
                   <Button
                     className="flex w-full sm:w-auto items-center justify-center gap-2 shadow-md"
                     size="lg"
-                    onClick={() => void item.onDownload()}
+                    onClick={() => {
+                      void handleDownloadItem(item);
+                    }}
+                    disabled={isAnyDownloadInProgress}
                   >
-                    <Download className="w-4 h-4" />
-                    Download
+                    {activeDownloadFileName === item.fileName ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    {activeDownloadFileName === item.fileName ? "Generating..." : "Download"}
                   </Button>
                 </div>
               </motion.div>
@@ -1974,16 +2015,16 @@ export default function StudentDownloads() {
             variant="outline"
             className="flex items-center gap-2 shadow-md hover:shadow-lg"
             onClick={() => {
-              void (async () => {
-                for (const item of downloadItems) {
-                  await item.onDownload();
-                }
-              })();
+              void handleDownloadAll();
             }}
-            disabled={downloadItems.length === 0}
+            disabled={downloadItems.length === 0 || isAnyDownloadInProgress}
           >
-            <Download className="w-5 h-5" />
-            Download All Files
+            {isDownloadingAll ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : (
+              <Download className="w-5 h-5" />
+            )}
+            {isDownloadingAll ? "Generating Files..." : "Download All Files"}
           </Button>
         </motion.div>
       </div>
