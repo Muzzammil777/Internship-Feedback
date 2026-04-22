@@ -19,9 +19,12 @@ import {
   X,
   CheckCircle2,
   Trash2,
+  Pencil,
+  Lock,
 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
 import { apiFetch } from "../../lib/api";
 
 interface Task {
@@ -65,6 +68,32 @@ export default function CompanyStudentDetails() {
   const [isDeletingStudent, setIsDeletingStudent] = useState(false);
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoadingStudents, setIsLoadingStudents] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editError, setEditError] = useState("");
+  const [editTargetEmail, setEditTargetEmail] = useState("");
+  const [editSkillInput, setEditSkillInput] = useState("");
+  const [editSkills, setEditSkills] = useState<string[]>([]);
+  const [editTasks, setEditTasks] = useState<Task[]>([]);
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [passwordNotice, setPasswordNotice] = useState("");
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [showGeneratedPassword, setShowGeneratedPassword] = useState(false);
+  const [customPassword, setCustomPassword] = useState("");
+  const [showCustomPassword, setShowCustomPassword] = useState(false);
+  const [editForm, setEditForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    COLLEGE: "",
+    COLLEGE_DEPARTMENT: "",
+    Role: "",
+    supervisor: "",
+    supervisorEmail: "",
+    startDate: "",
+    endDate: "",
+  });
 
   const [newStudentForm, setNewStudentForm] = useState({
     name: "",
@@ -217,6 +246,172 @@ export default function CompanyStudentDetails() {
       setApiError(error instanceof Error ? error.message : "Unable to remove student right now.");
     } finally {
       setIsDeletingStudent(false);
+    }
+  };
+
+  const calculateDuration = (startDate: string, endDate: string) => {
+    if (!startDate || !endDate) return "";
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return "";
+    const weeks = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 7));
+    return `${weeks} weeks`;
+  };
+
+  const openEditModal = (student: Student) => {
+    setEditTargetEmail(student.email);
+    setEditForm({
+      name: student.name || "",
+      email: student.email || "",
+      phone: student.phone || "",
+      COLLEGE: student.COLLEGE || "",
+      COLLEGE_DEPARTMENT: student.COLLEGE_DEPARTMENT || "",
+      Role: student.Role || "",
+      supervisor: student.supervisor || "",
+      supervisorEmail: student.supervisorEmail || "",
+      startDate: student.startDate || "",
+      endDate: student.endDate || "",
+    });
+    setEditSkills(student.skills || []);
+    setEditTasks(student.tasks || []);
+    setEditSkillInput("");
+    setEditError("");
+    setIsEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+    setEditError("");
+  };
+
+  const openPasswordModal = () => {
+    setPasswordNotice("");
+    setCustomPassword("");
+    setShowCustomPassword(false);
+    setShowGeneratedPassword(false);
+    setGeneratedPassword(null);
+    setIsPasswordModalOpen(true);
+  };
+
+  const closePasswordModal = () => {
+    setIsPasswordModalOpen(false);
+  };
+
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent || isResettingPassword) {
+      return;
+    }
+
+    setIsResettingPassword(true);
+    setPasswordNotice("");
+
+    try {
+      const response = await apiFetch(
+        `${API_BASE}/students/${encodeURIComponent(selectedStudent.id)}/reset-password`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            password: customPassword.trim() || undefined,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorPayload = (await response.json()) as { detail?: string };
+        throw new Error(errorPayload.detail ?? "Failed to reset password");
+      }
+
+      const data = (await response.json()) as { temporaryPassword?: string };
+      setGeneratedPassword(data.temporaryPassword ?? null);
+      setShowGeneratedPassword(true);
+      setPasswordNotice("Password reset successfully. Share the new password with the student securely.");
+    } catch (error) {
+      setPasswordNotice(error instanceof Error ? error.message : "Unable to reset password right now.");
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const addEditSkill = () => {
+    const normalized = editSkillInput.trim();
+    if (!normalized || editSkills.includes(normalized)) return;
+    setEditSkills((prev) => [...prev, normalized]);
+    setEditSkillInput("");
+  };
+
+  const removeEditSkill = (skill: string) => {
+    setEditSkills((prev) => prev.filter((item) => item !== skill));
+  };
+
+  const addEditTask = () => {
+    setEditTasks((prev) => [
+      ...prev,
+      { id: Date.now().toString(), title: "", description: "" },
+    ]);
+  };
+
+  const updateEditTask = (id: string, field: keyof Task, value: string) => {
+    setEditTasks((prev) =>
+      prev.map((task) => (task.id === id ? { ...task, [field]: value } : task))
+    );
+  };
+
+  const removeEditTask = (id: string) => {
+    setEditTasks((prev) => prev.filter((task) => task.id !== id));
+  };
+
+  const handleSaveEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editTargetEmail || isSavingEdit) {
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditError("");
+
+    try {
+      const response = await apiFetch(
+        `${API_BASE}/students/profile/${encodeURIComponent(editTargetEmail)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: editForm.name,
+            email: editForm.email,
+            phone: editForm.phone,
+            profilePhoto: selectedStudent?.profilePhoto || "",
+            role_title: editForm.Role,
+            college: editForm.COLLEGE,
+            college_department: editForm.COLLEGE_DEPARTMENT,
+            startDate: editForm.startDate,
+            endDate: editForm.endDate,
+            duration: calculateDuration(editForm.startDate, editForm.endDate),
+            supervisor: editForm.supervisor,
+            supervisorEmail: editForm.supervisorEmail,
+            skills: editSkills,
+            tasks: editTasks,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorPayload = (await response.json()) as { detail?: string };
+        throw new Error(errorPayload.detail ?? "Failed to update student profile");
+      }
+
+      const updatedStudent = (await response.json()) as Student;
+      setStudents((prev) =>
+        prev.map((student) => (student.id === updatedStudent.id ? updatedStudent : student))
+      );
+      setSelectedStudent(updatedStudent);
+      setIsEditModalOpen(false);
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : "Unable to update student profile.");
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -711,14 +906,37 @@ export default function CompanyStudentDetails() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Student List
               </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="destructive"
+                  onClick={handleDeleteStudent}
+                  disabled={isDeletingStudent}
+                  className="flex items-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  {isDeletingStudent ? "Removing..." : "Remove Student"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="mb-4 flex justify-end gap-2">
               <Button
-                variant="destructive"
-                onClick={handleDeleteStudent}
-                disabled={isDeletingStudent}
+                variant="outline"
+                type="button"
+                onClick={openPasswordModal}
                 className="flex items-center gap-2"
               >
-                <Trash2 className="w-4 h-4" />
-                {isDeletingStudent ? "Removing..." : "Remove Student"}
+                <Lock className="w-4 h-4" />
+                Change Password
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => selectedStudent && openEditModal(selectedStudent)}
+                className="flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit Profile
               </Button>
             </div>
 
@@ -1039,6 +1257,347 @@ export default function CompanyStudentDetails() {
 
         </div>
       </div>
+
+      <AnimatePresence>
+        {isEditModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closeEditModal}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 px-6 py-5 border-b border-border">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-md flex-shrink-0">
+                        <Pencil className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground mb-1">
+                          Edit Student Profile
+                        </h2>
+                        <p className="text-sm text-muted-foreground">
+                          Update personal and internship details
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={closeEditModal}
+                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors flex-shrink-0"
+                      type="button"
+                    >
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="max-h-[calc(90vh-140px)] overflow-y-auto">
+                  <form onSubmit={handleSaveEdit} className="p-6 space-y-6">
+                    {editError && (
+                      <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
+                        {editError}
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">
+                          Full Name
+                          <span className="text-destructive ml-1">*</span>
+                        </Label>
+                        <Input
+                          required
+                          value={editForm.name}
+                          onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">
+                          Email Address
+                          <span className="text-destructive ml-1">*</span>
+                        </Label>
+                        <Input
+                          required
+                          type="email"
+                          value={editForm.email}
+                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Phone</Label>
+                        <Input
+                          value={editForm.phone}
+                          onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Role</Label>
+                        <Input
+                          value={editForm.Role}
+                          onChange={(e) => setEditForm({ ...editForm, Role: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">College</Label>
+                        <Input
+                          value={editForm.COLLEGE}
+                          onChange={(e) => setEditForm({ ...editForm, COLLEGE: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Department</Label>
+                        <Input
+                          value={editForm.COLLEGE_DEPARTMENT}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, COLLEGE_DEPARTMENT: e.target.value })
+                          }
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Supervisor</Label>
+                        <Input
+                          value={editForm.supervisor}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, supervisor: e.target.value })
+                          }
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Supervisor Email</Label>
+                        <Input
+                          type="email"
+                          value={editForm.supervisorEmail}
+                          onChange={(e) =>
+                            setEditForm({ ...editForm, supervisorEmail: e.target.value })
+                          }
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Start Date</Label>
+                        <Input
+                          type="date"
+                          value={editForm.startDate}
+                          onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">End Date</Label>
+                        <Input
+                          type="date"
+                          value={editForm.endDate}
+                          onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-foreground">Skills</Label>
+                      <div className="flex flex-wrap gap-2">
+                        {editSkills.map((skill) => (
+                          <SkillTag
+                            key={skill}
+                            skill={skill}
+                            onRemove={() => removeEditSkill(skill)}
+                            variant="primary"
+                          />
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <Input
+                          value={editSkillInput}
+                          onChange={(e) => setEditSkillInput(e.target.value)}
+                          placeholder="Add a skill"
+                        />
+                        <Button type="button" variant="outline" onClick={addEditSkill}>
+                          Add
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-sm font-semibold text-foreground">Tasks</Label>
+                        <Button type="button" variant="outline" onClick={addEditTask}>
+                          <Plus className="w-4 h-4 mr-2" />
+                          Add Task
+                        </Button>
+                      </div>
+
+                      {editTasks.map((task) => (
+                        <div key={task.id} className="border border-border rounded-xl p-4 space-y-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <Input
+                              value={task.title}
+                              onChange={(e) => updateEditTask(task.id, "title", e.target.value)}
+                              placeholder="Task title"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              onClick={() => removeEditTask(task.id)}
+                            >
+                              <Trash2 className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={task.description}
+                            onChange={(e) =>
+                              updateEditTask(task.id, "description", e.target.value)
+                            }
+                            placeholder="Task description"
+                          />
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="flex gap-3 justify-end">
+                      <Button type="button" variant="outline" onClick={closeEditModal}>
+                        Cancel
+                      </Button>
+                      <Button type="submit" disabled={isSavingEdit}>
+                        {isSavingEdit ? "Saving..." : "Save Changes"}
+                      </Button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {isPasswordModalOpen && selectedStudent && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={closePasswordModal}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="bg-gradient-to-r from-primary/10 via-purple-50 to-accent/10 px-6 py-5 border-b border-border">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4">
+                      <div className="p-2.5 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-md flex-shrink-0">
+                        <Lock className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground mb-1">Password Access</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Reset the student password and share it securely.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={closePasswordModal}
+                      className="p-1.5 hover:bg-white/50 rounded-lg transition-colors flex-shrink-0"
+                      type="button"
+                    >
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+
+                <form onSubmit={handleResetPassword} className="p-6 space-y-5">
+                  {passwordNotice && (
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
+                      {passwordNotice}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-foreground">Student Email</Label>
+                    <Input value={selectedStudent.email} disabled className="text-base" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-foreground">
+                      Set Custom Password
+                      <span className="text-xs text-muted-foreground font-normal ml-1">(Optional)</span>
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type={showCustomPassword ? "text" : "password"}
+                        value={customPassword}
+                        onChange={(e) => setCustomPassword(e.target.value)}
+                        placeholder="Leave blank to auto-generate"
+                        minLength={6}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowCustomPassword((prev) => !prev)}
+                      >
+                        {showCustomPassword ? "Hide" : "Show"}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {generatedPassword && (
+                    <div className="space-y-2">
+                      <Label className="text-sm font-semibold text-foreground">New Password</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type={showGeneratedPassword ? "text" : "password"}
+                          value={generatedPassword}
+                          readOnly
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowGeneratedPassword((prev) => !prev)}
+                        >
+                          {showGeneratedPassword ? "Hide" : "Show"}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex gap-3 justify-end">
+                    <Button type="button" variant="outline" onClick={closePasswordModal}>
+                      Close
+                    </Button>
+                    <Button type="submit" disabled={isResettingPassword}>
+                      {isResettingPassword ? "Resetting..." : "Reset Password"}
+                    </Button>
+                  </div>
+                </form>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

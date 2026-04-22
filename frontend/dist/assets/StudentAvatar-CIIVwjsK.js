@@ -1,6 +1,0 @@
-import{c as n,m as d}from"./createLucideIcon-D1Pa3dJC.js";import{j as e}from"./index-DH7Vjmy0.js";/**
- * @license lucide-react v0.487.0 - ISC
- *
- * This source code is licensed under the ISC license.
- * See the LICENSE file in the root directory of this source tree.
- */const x=[["circle",{cx:"11",cy:"11",r:"8",key:"4ej97u"}],["path",{d:"m21 21-4.3-4.3",key:"1qie3q"}]],f=n("search",x);function h({name:t,size:o="md",gradient:s,withRing:l=!1,photoUrl:a}){const i=t.split(" ").filter(Boolean).slice(0,2).map(c=>c[0]).join("").toUpperCase(),r={sm:"w-12 h-12 text-base",md:"w-16 h-16 text-lg",lg:"w-24 h-24 text-2xl",xl:"w-32 h-32 text-3xl"};return e.jsxs("div",{className:"relative",children:[l&&e.jsx("div",{className:`absolute inset-0 bg-gradient-to-br ${s} rounded-full blur-md opacity-40 group-hover:opacity-60 transition-opacity`}),e.jsx(d.div,{whileHover:l?{scale:1.05}:{},className:`relative ${r[o]} rounded-full overflow-hidden bg-gradient-to-br ${s} flex items-center justify-center shadow-xl`,children:a?e.jsx("img",{src:a,alt:`${t} profile`,className:"h-full w-full rounded-full object-cover"}):e.jsx("span",{className:"font-bold leading-none tracking-tight text-white text-center select-none",children:i})})]})}export{f as S,h as a};

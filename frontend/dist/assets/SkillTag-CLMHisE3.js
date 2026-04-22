@@ -1,0 +1,6 @@
+import{c as s}from"./createLucideIcon-bmm-C0Av.js";import{j as o,m as a}from"./index-BhHExxpi.js";import{X as n}from"./x-0pTwexuK.js";/**
+ * @license lucide-react v0.487.0 - ISC
+ *
+ * This source code is licensed under the ISC license.
+ * See the LICENSE file in the root directory of this source tree.
+ */const d=[["polyline",{points:"16 18 22 12 16 6",key:"z7tu5w"}],["polyline",{points:"8 6 2 12 8 18",key:"1eg1df"}]],m=s("code",d);function g({skill:t,onRemove:e,variant:r="default"}){const i={default:"bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 border border-gray-300 shadow-sm",primary:"bg-gradient-to-br from-indigo-100 via-purple-100 to-indigo-100 text-indigo-700 border-2 border-indigo-200 shadow-md",accent:"bg-gradient-to-r from-teal-50 to-cyan-50 text-teal-700 border border-teal-200 shadow-sm"};return o.jsxs(a.div,{initial:{scale:.8,opacity:0},animate:{scale:1,opacity:1},exit:{scale:.8,opacity:0},whileHover:{scale:1.05,y:-2,shadow:"0 10px 25px -5px rgba(99, 102, 241, 0.3)"},className:`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold ${i[r]} transition-shadow`,children:[o.jsx("span",{children:t}),e&&o.jsx(a.button,{type:"button",onClick:()=>e(t),whileHover:{scale:1.2,rotate:90},whileTap:{scale:.9},className:"hover:opacity-70 transition-opacity",children:o.jsx(n,{className:"w-3.5 h-3.5"})})]})}export{m as C,g as S};
