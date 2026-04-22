@@ -64,7 +64,7 @@ function readStoredUser(): User | null {
 
 export const DEMO_USERS = {
   student: {
-    email: "student@example.com",
+    email: "student@gmail.com",
     password: "123456",
     role: "student" as const,
     name: "Alex Johnson",
