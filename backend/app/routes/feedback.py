@@ -300,7 +300,7 @@ async def save_company_feedback(
         payload_data = await request.json()
         payload = CompanyFeedbackCreate.model_validate(payload_data)
     except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        raise HTTPException(status_code=422, detail=exc.errors(include_context=False)) from exc
 
     student_document = await _find_student_document(student_id=payload.studentId, student_email=payload.studentEmail or None)
     if student_document is None:
@@ -405,7 +405,7 @@ async def save_student_feedback(
         payload_data = await request.json()
         payload = StudentFeedbackCreate.model_validate(payload_data)
     except ValidationError as exc:
-        raise HTTPException(status_code=422, detail=exc.errors()) from exc
+        raise HTTPException(status_code=422, detail=exc.errors(include_context=False)) from exc
 
     if current_user.role != "student":
         raise HTTPException(status_code=403, detail="Only student accounts can submit student feedback")
