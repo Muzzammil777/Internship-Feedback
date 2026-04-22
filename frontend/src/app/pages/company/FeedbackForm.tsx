@@ -84,6 +84,8 @@ const HIRING_RECOMMENDATION_OPTIONS = [
   "Consider with Improvement",
 ] as const;
 
+const DIFFICULTY_LEVEL_OPTIONS = ["Basic", "Intermediate", "Advanced"] as const;
+
 const getRecommendationButtonClass = (option: string, selected: boolean): string => {
   if (!selected) {
     return "bg-white text-foreground border-border hover:bg-secondary/40";
@@ -452,8 +454,8 @@ export default function CompanyFeedbackForm() {
           COLLEGE_DEPARTMENT: student.COLLEGE_DEPARTMENT || "",
           projectTitle: student.tasks?.[0]?.title || "Internship Project",
           duration: student.duration || "N/A",
-          startDate: student.startDate || "",
-          endDate: student.endDate || "",
+          startDate: student.startDate || "N/A",
+          endDate: student.endDate || "N/A",
           profilePhoto: student.profilePhoto,
         }));
 
@@ -591,7 +593,7 @@ export default function CompanyFeedbackForm() {
 
     setSelectedTemplateId(savedActiveTemplate.id);
     initializeTemplateValues(savedActiveTemplate);
-  }, [templates]);
+  }, [templates, selectedStudentId]); // Added selectedStudentId to reset fields when switching students
 
   const updateTemplateValue = (fieldId: string, value: string | number) => {
     setTemplateValues((previous) => ({
@@ -650,6 +652,7 @@ export default function CompanyFeedbackForm() {
         else if (normalizedLabel.includes("recommend")) mapped.recommendation = textValue;
         else if (normalizedLabel.includes("comment") || normalizedLabel.includes("feedback") || normalizedLabel.includes("remark")) mapped.comments = textValue;
         else if (normalizedLabel.includes("type of work") || normalizedLabel.includes("work handled")) mapped.typeOfWorkHandled = textValue;
+        else if (normalizedLabel.includes("difficulty") || normalizedLabel.includes("level of tasks") || normalizedLabel.includes("level of work")) mapped.difficultyLevel = textValue;
         else extraEntries.push(`${field.label}: ${textValue}`);
       }
     }
@@ -781,9 +784,9 @@ export default function CompanyFeedbackForm() {
             role: clampText(selectedStudent.Role, 120),
             college: clampText(selectedStudent.COLLEGE, 150),
             projectTitle: clampText(selectedStudent.projectTitle, 150),
-            duration: clampText(selectedStudent.duration, 64),
-            startDate: clampText(selectedStudent.startDate, 64),
-            endDate: clampText(selectedStudent.endDate, 64),
+            duration: clampText(selectedStudent.duration || "N/A", 64) || "N/A",
+            startDate: clampText(selectedStudent.startDate || "N/A", 64) || "N/A",
+            endDate: clampText(selectedStudent.endDate || "N/A", 64) || "N/A",
             typeOfWorkHandled: sanitizedTypeOfWorkHandled,
             difficultyLevel: sanitizedDifficultyLevel,
             overallRating: clampRating(resolvedFeedback.overallRating),
@@ -1459,9 +1462,14 @@ export default function CompanyFeedbackForm() {
                     <div className="space-y-4">
                       {activeTemplate.fields.map((field) => {
                         const currentValue = templateValues[field.id] ?? getDefaultTemplateValue(field.type);
+                        const normalizedLabel = field.label.toLowerCase();
+                        const isDifficultyLevelField =
+                          field.type === "text" &&
+                          (normalizedLabel.includes("difficulty") ||
+                            normalizedLabel.includes("level of tasks"));
                         return (
                           <div key={field.id} className="space-y-1.5">
-                            {field.type === "text" && (
+                            {field.type === "text" && !isDifficultyLevelField && (
                               <>
                                 <Label className="font-semibold">
                                   {field.label}
@@ -1474,6 +1482,30 @@ export default function CompanyFeedbackForm() {
                                   placeholder={`Enter ${field.label.toLowerCase()}`}
                                   required={field.required}
                                 />
+                              </>
+                            )}
+                            {isDifficultyLevelField && (
+                              <>
+                                <Label className="font-semibold">
+                                  {field.label}
+                                  {field.required ? <span className="text-destructive ml-1">*</span> : null}
+                                </Label>
+                                <Select
+                                  value={String(currentValue)}
+                                  onValueChange={(value) => updateTemplateValue(field.id, value)}
+                                  disabled={isReadOnly}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select difficulty level" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {DIFFICULTY_LEVEL_OPTIONS.map((option) => (
+                                      <SelectItem key={option} value={option}>
+                                        {option}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </>
                             )}
                             {field.type === "textarea" && (
@@ -1834,18 +1866,6 @@ export default function CompanyFeedbackForm() {
                       </div>
                     </div>
 
-                    <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
-                      <h2 className="text-lg font-bold text-foreground mb-5">Additional Comments</h2>
-                      <Textarea
-                        rows={4}
-                        placeholder="Any additional evaluator comments."
-                        value={currentFeedback.comments}
-                        onChange={(e) => updateField("comments", e.target.value)}
-                        disabled={isReadOnly}
-                        className="resize-none"
-                      />
-                    </div>
-
                     {/* Section 10: Final Evaluation */}
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
                       <h2 className="text-lg font-bold text-foreground mb-5">Section 10: Final Evaluation</h2>
@@ -1884,6 +1904,18 @@ export default function CompanyFeedbackForm() {
                     </div>
                   </>
                 )}
+
+                <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
+                  <h2 className="text-lg font-bold text-foreground mb-5">Additional Comments</h2>
+                  <Textarea
+                    rows={4}
+                    placeholder="Any additional evaluator comments."
+                    value={currentFeedback.comments}
+                    onChange={(e) => updateField("comments", e.target.value)}
+                    disabled={isReadOnly}
+                    className="resize-none"
+                  />
+                </div>
 
                 {/* Submit Button */}
                 {(!currentFeedback.submitted || isEditMode) && (
