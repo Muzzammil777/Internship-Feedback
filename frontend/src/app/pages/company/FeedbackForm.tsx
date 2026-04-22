@@ -172,6 +172,7 @@ interface FeedbackStatus {
     proactiveChallenges: boolean;
     meaningfulProjectContribution: boolean;
     considerForFullTime: boolean;
+    templateValues?: Record<string, string | number>;
   };
 }
 
@@ -592,15 +593,13 @@ export default function CompanyFeedbackForm() {
     }
 
     setSelectedTemplateId(savedActiveTemplate.id);
-    initializeTemplateValues(savedActiveTemplate);
-  }, [templates, selectedStudentId]); // Added selectedStudentId to reset fields when switching students
-
-  const updateTemplateValue = (fieldId: string, value: string | number) => {
-    setTemplateValues((previous) => ({
-      ...previous,
-      [fieldId]: value,
-    }));
-  };
+      const studentFeedback = selectedStudentId ? feedbackStatus[selectedStudentId] : null;
+      if (studentFeedback?.templateValues) {
+        setTemplateValues({ ...studentFeedback.templateValues });
+      } else {
+        initializeTemplateValues(savedActiveTemplate);
+      }
+    }, [templates, selectedStudentId, feedbackStatus[selectedStudentId]?.templateValues]); // Added selectedStudentId to reset fields when switching students
 
   const mapTemplateValuesToFeedback = () => {
     if (!activeTemplate) {
@@ -721,6 +720,7 @@ export default function CompanyFeedbackForm() {
           proactiveChallenges: currentFeedback.proactiveChallenges,
           meaningfulProjectContribution: currentFeedback.meaningfulProjectContribution,
           considerForFullTime: currentFeedback.considerForFullTime,
+          templateValues: templateValues,
         };
 
         const missingRequiredFields: string[] = [];

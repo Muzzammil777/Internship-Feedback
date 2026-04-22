@@ -2,6 +2,7 @@ import { motion } from "motion/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Download, FileText, Award, Building2, File, Loader2 } from "lucide-react";
+import LoadingAnimation from "../../components/shared/LoadingAnimation";
 import { useAuth } from "../../context/AuthContext";
 import { API_BASE_URL, apiFetch } from "../../lib/api";
 import { jsPDF } from "jspdf";
@@ -1478,8 +1479,16 @@ export default function StudentDownloads() {
           })
           .join("");
 
+        // Page layout: Page 1 → S1+S2 | Page 2 → S3+S4+S5 | Page 3 → S6+S7+S8
+        const startsNewPage =
+          section.title.startsWith("Section 3") ||
+          section.title.startsWith("Section 6");
+        const pageBreakStyle = startsNewPage
+          ? ` style="break-before:page; page-break-before:always;"`
+          : "";
+
         return `
-          <section class="feedback-section card">
+          <section class="feedback-section card"${pageBreakStyle}>
             <h3>${escapeHtml(section.title)}</h3>
             <div class="section-divider"></div>
             <div class="qa-list">${questionsMarkup}</div>
@@ -1734,32 +1743,23 @@ export default function StudentDownloads() {
 
     const reportScale = canvas.width / reportElement.scrollWidth;
     const sectionElements = Array.from(reportElement.querySelectorAll(".feedback-section")) as HTMLElement[];
-    const sectionBreakpoints = sectionElements
-      .map((element) => Math.round(element.offsetTop * reportScale))
-      .sort((first, second) => first - second);
 
+    // Forced page-break indices: Section 3 (index 2) starts page 2,
+    // Section 6 (index 5) starts page 3.
+    const forcedBreakIndices = [2, 5];
+    const forcedBreakpointsPx = forcedBreakIndices
+      .filter((i) => i < sectionElements.length)
+      .map((i) => Math.round(sectionElements[i].offsetTop * reportScale));
+
+    // Build page slices by cutting at the forced breakpoints
+    const allCuts = [0, ...forcedBreakpointsPx, canvas.height];
     const pageSlices: Array<{ startPx: number; heightPx: number }> = [];
-    let yOffsetPx = 0;
-
-    while (yOffsetPx < canvas.height) {
-      let sliceEndPx = Math.min(yOffsetPx + contentHeightPx, canvas.height);
-      const crossingBreakpoint = sectionBreakpoints.find(
-        (breakpoint) => breakpoint > yOffsetPx && breakpoint < sliceEndPx,
-      );
-
-      if (crossingBreakpoint && crossingBreakpoint - yOffsetPx > Math.floor(contentHeightPx * 0.35)) {
-        sliceEndPx = crossingBreakpoint;
+    for (let i = 0; i < allCuts.length - 1; i++) {
+      const startPx = allCuts[i];
+      const endPx = allCuts[i + 1];
+      if (endPx > startPx) {
+        pageSlices.push({ startPx, heightPx: endPx - startPx });
       }
-
-      if (sliceEndPx <= yOffsetPx) {
-        sliceEndPx = Math.min(yOffsetPx + contentHeightPx, canvas.height);
-      }
-
-      pageSlices.push({
-        startPx: yOffsetPx,
-        heightPx: sliceEndPx - yOffsetPx,
-      });
-      yOffsetPx = sliceEndPx;
     }
 
     const totalPages = pageSlices.length;
@@ -1883,15 +1883,7 @@ export default function StudentDownloads() {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full"
-        />
-      </div>
-    );
+    return <LoadingAnimation title="Loading downloads" description="Fetching your reports and feedback data..." />;
   }
 
   const colorClasses = {

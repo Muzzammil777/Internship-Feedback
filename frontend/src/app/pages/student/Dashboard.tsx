@@ -246,7 +246,7 @@ export default function StudentDashboard() {
                 {profile?.tasks?.[0]?.title || "Active Internship Project"}
               </h3>
               <p className="text-muted-foreground leading-relaxed">
-                {profile?.tasks?.[0]?.description || "Your supervisor hasn't assigned specific tasks to the system yet. Once your tasks are tracked, your main contributions will appear here."}
+                {profile?.tasks?.[0]?.description || "Add you contributions using the profile page."}
               </p>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 pt-4 border-t border-border">
