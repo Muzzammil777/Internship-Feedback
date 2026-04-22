@@ -4,32 +4,36 @@
 
 # MoviCloud Internship Feedback System
 
-Detailed project documentation is available in [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
+Detailed technical documentation is available in [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
 
-Full-stack internship evaluation platform with:
+MoviCloud is a full-stack, role-based internship evaluation platform.
 
 - Frontend: React + TypeScript + Vite
 - Backend: FastAPI + MongoDB (Motor)
-- Two roles: student and company
+- Roles: student and company
 
-The current README is implementation-based and reflects what is actually present in this repository.
+## What The System Does
 
-## Overview
+The platform supports two feedback directions:
 
-MoviCloud supports two feedback directions:
+- Company to Student: structured performance evaluation
+- Student to Company: section-based internship experience feedback
 
-- Company -> Student: structured intern performance evaluation
-- Student -> Company: section-based internship experience feedback
+Core workflows:
 
-The app includes profile management, feedback submission and review, and PDF report generation on the frontend.
+- Authentication with JWT access tokens
+- Student profile management (including skills, tasks, and profile photo)
+- Company-managed student records
+- Feedback submission, validation, and retrieval
+- Client-side PDF report generation for student downloads
 
-## Current Status
+## Current Implementation Status
 
-- Backend is implemented and running (not planned)
-- Frontend is connected to backend endpoints
-- Authentication is database-backed email/password login
-- JWT access tokens are issued by the backend and propagated by the frontend
-- Form templates are currently persisted in browser localStorage (frontend)
+- Backend and frontend are fully integrated
+- Protected routes use Bearer auth (`/students`, `/feedback`)
+- JWT token is persisted in browser storage and attached via `apiFetch`
+- Company form templates are currently stored in browser localStorage
+- Student download PDFs are generated in-browser with loading states
 
 ## Tech Stack
 
@@ -48,10 +52,11 @@ The app includes profile management, feedback submission and review, and PDF rep
 - TypeScript 5
 - Vite 6
 - Tailwind CSS 4
-- Radix UI and shadcn-based components
-- motion (Framer Motion)
-- React Router 7
-- jsPDF + html2canvas for report generation
+- React Router 7 (hash router)
+- motion
+- Lucide icons
+- shadcn-style component primitives
+- jsPDF + html2canvas
 
 ### Backend
 
@@ -64,8 +69,8 @@ The app includes profile management, feedback submission and review, and PDF rep
 
 - FastAPI 0.115
 - Uvicorn
-- Pydantic + pydantic-settings
 - Motor (MongoDB async driver)
+- Pydantic + pydantic-settings
 - passlib[bcrypt]
 - python-jose[cryptography]
 - slowapi
@@ -77,140 +82,93 @@ The app includes profile management, feedback submission and review, and PDF rep
 .
 |- frontend/
 |  |- src/app/pages/student/      # dashboard, profile, feedback, downloads
-|  |- src/app/pages/company/      # student directory, feedback form, form editor
-|  |- src/app/context/            # auth context and login flow
-|  |- src/app/layouts/            # sidebar/root layout
-|  |- public/
+|  |- src/app/pages/company/      # student details, feedback form, form editor
+|  |- src/app/context/            # auth state and login flow
+|  |- src/app/lib/                # authenticated fetch/session helpers
+|  |- src/app/layouts/            # root layout and navigation
 |  `- .env.example
 |
 |- backend/
-|  |- app/main.py                 # FastAPI app entry, middleware, routers
-|  |- app/core/                   # settings and async mongo connection
-|  |- app/routes/                 # auth, students, feedback, health
-|  |- models/                     # domain documents (typed Pydantic models)
-|  |- schemas/                    # API request/response schemas
-|  |- database/                   # sync mongo helpers + index definitions
+|  |- app/main.py                 # FastAPI app composition and middleware
+|  |- app/core/                   # settings, db connection, security, crypto
+|  |- app/routes/                 # health, auth, students, feedback
+|  |- models/                     # typed domain models (extended architecture)
+|  |- schemas/                    # request/response schemas (extended architecture)
+|  |- database/                   # index definitions and db utilities
 |  |- requirements.txt
 |  `- .env.example
 |
-|- start.bat                      # convenience startup script
+|- start.bat                      # Windows convenience startup script
+|- PROJECT_DOCUMENTATION.md
 `- README.md
 ```
 
-## Backend Analysis
+## API Summary
 
-### App Composition
+### Health
 
-FastAPI app bootstraps in backend/app/main.py and includes:
+- `GET /health`
 
-- CORS middleware using CORS_ORIGINS from env
-- Startup DB readiness probe (ping + demo user seed)
-- JWT auth with protected student and feedback routes
-- Login and feedback rate limiting with slowapi
-- Security headers middleware
-- Routers: /health, /auth, /students, /feedback
+### Auth
 
-### Implemented Endpoints
+- `POST /auth/login`
 
-#### Health
+Behavior:
 
-- GET /health
+- Validates database user credentials first
+- Falls back to demo credentials from environment if needed
+- Returns `access_token`, `token_type`, `email`, `name`, `role`
 
-#### Auth
+### Students
 
-- POST /auth/login
-  - validates email/password against users collection
-  - fallback to demo credentials from env
-  - returns access_token, token_type, email, name, role
+- `GET /students` (company only)
+- `POST /students` (company only)
+- `GET /students/profile/{email}`
+- `PUT /students/profile/{email}`
+- `DELETE /students/{student_id}` (company only)
 
-#### Students
+Behavior:
 
-- GET /students
-- POST /students
-- GET /students/profile/{email}
-- PUT /students/profile/{email}
-- DELETE /students/{student_id}
+- Student creation also creates a linked user login record
+- Profile photo must be JPEG/PNG base64 data URL and <= 2MB
+- Update flow also syncs linked user document name/email
 
-Notes:
+### Feedback
 
-- Student create also creates matching user login record
-- Passwords are hashed before storage
-- Profile includes photo, skills, tasks, internship metadata
-- profilePhoto is stored as base64 data URL string
-- Sensitive student and feedback routes require a Bearer token
+- `GET /feedback/company?student_id=...`
+- `POST /feedback/company` (company only)
+- `GET /feedback/student?student_email=...`
+- `POST /feedback/student` (student only)
 
-#### Feedback
+Behavior:
 
-- GET /feedback/company?student_id=...
-- POST /feedback/company
-- GET /feedback/student?student_email=...
-- POST /feedback/student
+- Company feedback submission marks student status as `completed`
+- Student feedback accepts section-based payloads and legacy fields
+- Rate limiting is applied to login and feedback submit routes
+- If MongoDB is unavailable at runtime, feedback routes use in-memory fallback
 
-Notes:
+## Authentication And Security
 
-- Student feedback supports section-based questionnaire payload
-- Legacy fallback fields are still accepted
-- Company feedback writes student status to completed
-- Route has in-memory fallback if MongoDB becomes unavailable
-- Company feedback POST is company-only; student feedback POST is student-only
+- JWT is generated in backend and stored in frontend localStorage session payload
+- Frontend helper `apiFetch` automatically injects `Authorization: Bearer <token>`
+- Backend middleware enforces auth on `/students` and `/feedback`
+- Security headers are applied globally (CSP, frame/options, referrer, permissions)
 
-### Data and Schema Layers
+## Frontend Route Map
 
-The backend currently has two parallel layers:
-
-- Active route-level schema models under backend/app/routes
-- Additional domain models and schemas under backend/models and backend/schemas for richer typed architecture and index planning
-
-MongoDB index definitions exist in backend/database/indexes.py for users, students, companies, feedback, templates, and downloads.
-
-## Frontend Analysis
-
-### Routing and Roles
-
-Routes are role-oriented:
-
-- student/dashboard
-- student/profile
-- student/feedback
-- student/downloads
-- company/student-details
-- company/feedback-form
-- company/form-editor
-
-Root layout provides responsive sidebar (desktop collapse + mobile drawer).
-
-### Auth Flow
-
-- Login calls POST /auth/login
-- User and access token are persisted in localStorage
-- Role mismatch is blocked on client side
-
-Important credential detail:
-
-- Frontend quick-fill company credential uses admin@internfeedback.com
-- Backend default demo company credential in backend/.env.example is admin@internfeedback.com
-
-If you rely on demo login, align these values.
-
-### Student Area
-
-- Dashboard loads profile + both feedback streams
-- Profile supports editing, skills/tasks, and photo upload/removal
-- Feedback page shows company feedback and submits section-based student feedback
-- Downloads page builds PDF reports from backend data using jsPDF/html2canvas
-
-### Company Area
-
-- Student directory supports search, create student, and delete student
-- Company feedback form supports full evaluation and reads student-submitted feedback
-- Form editor allows customizable question fields for both form types
-- Template definitions are saved in localStorage and reused by feedback pages
+- `/#/student/dashboard`
+- `/#/student/profile`
+- `/#/student/feedback`
+- `/#/student/downloads`
+- `/#/company/student-details`
+- `/#/company/feedback-form`
+- `/#/company/form-editor`
 
 ## Environment Variables
 
-### Backend (backend/.env)
+### Backend (`backend/.env`)
 
-Start from backend/.env.example:
+Start from `backend/.env.example`.
 
 ```env
 MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>/<database>?retryWrites=true&w=majority
@@ -222,15 +180,14 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 LOGIN_RATE_LIMIT=8/minute
 FEEDBACK_RATE_LIMIT=10/minute
+CONTENT_SECURITY_POLICY=default-src 'self'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self'
 DEMO_STUDENT_EMAIL=student@example.com
 DEMO_STUDENT_PASSWORD=123456
 DEMO_COMPANY_EMAIL=admin@internfeedback.com
 DEMO_COMPANY_PASSWORD=123456
 ```
 
-### Frontend (frontend/.env)
-
-Start from frontend/.env.example:
+### Frontend (`frontend/.env`)
 
 ```env
 VITE_API_BASE_URL=http://localhost:8000
@@ -238,7 +195,7 @@ VITE_API_BASE_URL=http://localhost:8000
 
 ## Run Locally
 
-### Option 1: Use start script (Windows)
+### Option A: Windows Startup Script
 
 From repository root:
 
@@ -246,9 +203,9 @@ From repository root:
 start.bat
 ```
 
-This script installs dependencies and opens separate terminals for backend and frontend servers.
+Important: `start.bat` expects Python at `.venv\Scripts\python.exe` in the repository root.
 
-### Option 2: Run manually
+### Option B: Manual Run
 
 Backend:
 
@@ -268,16 +225,31 @@ npm install
 npm run dev
 ```
 
-URLs:
+Default URLs:
 
 - Frontend: http://localhost:5173
 - Backend: http://localhost:8000
-- API docs: http://localhost:8000/docs
+- OpenAPI docs: http://localhost:8000/docs
 
-## Known Gaps and Next Improvements
+## Demo Credentials
 
-- Move form templates from browser localStorage to backend persistence
-- Add automated tests for auth, feedback validation, and student lifecycle
+| Role | Email | Password |
+|---|---|---|
+| Student | `student@example.com` | `123456` |
+| Company | `admin@internfeedback.com` | `123456` |
+
+## Recent UX Improvements
+
+- Student downloads page uses authenticated API requests for protected endpoints
+- Mobile card layout fixed for download action button
+- PDF generation shows per-file and bulk loading animations while disabling duplicate clicks
+- Student profile task delete button is now visible on mobile
+
+## Known Gaps / Next Steps
+
+- Persist form templates in backend (currently localStorage)
+- Add automated tests for auth, feedback validation, and profile lifecycle
+- Add centralized error telemetry and frontend toast feedback for generation failures
 - Add token refresh if longer-lived sessions are needed
 
 ## License
