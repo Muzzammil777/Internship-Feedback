@@ -6,6 +6,7 @@ import base64
 import binascii
 import logging
 import re
+import secrets
 
 from bson import ObjectId
 from fastapi import APIRouter, Depends, HTTPException
@@ -84,6 +85,12 @@ class UpdateStudentProfileRequest(BaseModel):
             raise ValueError("Profile photo must be 2MB or smaller")
 
         return value
+
+
+class ResetStudentPasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    password: str | None = Field(default=None, min_length=6, max_length=128)
 
 
 def _serialize(doc: dict) -> dict:
@@ -306,3 +313,47 @@ async def delete_student(
     except PyMongoError as exc:
         logger.error("Failed to delete student %s: %s", student_id, exc)
         raise HTTPException(status_code=500, detail="Failed to delete student") from exc
+
+
+@router.post("/{student_id}/reset-password")
+async def reset_student_password(
+    student_id: str,
+    payload: ResetStudentPasswordRequest,
+    current_user: AuthenticatedUser = Depends(require_company),
+) -> dict:
+    db = get_database()
+
+    try:
+        student_object_id = ObjectId(student_id)
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail="Invalid student id") from exc
+
+    student = await db["students"].find_one({"_id": student_object_id})
+    if not student:
+        raise HTTPException(status_code=404, detail="Student not found")
+
+    new_password = payload.password or secrets.token_urlsafe(8)
+
+    try:
+        update_result = await db["users"].update_one(
+            {"student_id": student_id},
+            {"$set": {"password_hash": hash_password(new_password)}, "$unset": {"password": ""}},
+        )
+        if update_result.matched_count == 0:
+            student_email = student.get("email")
+            if not student_email:
+                raise HTTPException(status_code=404, detail="Student account not found")
+            update_result = await db["users"].update_one(
+                {"email": student_email, "role": "student"},
+                {"$set": {"password_hash": hash_password(new_password)}, "$unset": {"password": ""}},
+            )
+            if update_result.matched_count == 0:
+                raise HTTPException(status_code=404, detail="Student account not found")
+    except PyMongoError as exc:
+        logger.error("Failed to reset student password %s: %s", student_id, exc)
+        raise HTTPException(status_code=500, detail="Failed to reset student password") from exc
+
+    return {
+        "message": "Password reset successfully",
+        "temporaryPassword": new_password,
+    }
