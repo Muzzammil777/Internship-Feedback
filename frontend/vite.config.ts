@@ -16,6 +16,9 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  server: {
+    host: true, // Expose on local network (0.0.0.0) so mobile devices can connect via your PC's IP
+  },
   assetsInclude: ['**/*.svg', '**/*.csv'],
   build: {
     chunkSizeWarningLimit: 700,

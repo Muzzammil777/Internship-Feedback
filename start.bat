@@ -23,7 +23,7 @@ popd
 
 echo.
 echo [2/4] Starting Backend Server...
-start "Backend (FastAPI)" /D "%BACKEND_DIR%" "%PYTHON_EXE%" -m uvicorn app.main:app --reload
+start "Backend (FastAPI)" /D "%BACKEND_DIR%" "%PYTHON_EXE%" -m uvicorn app.main:app --reload --host 0.0.0.0
 
 echo.
 echo [3/4] Installing Frontend Dependencies...
@@ -40,7 +40,7 @@ popd
 
 echo.
 echo [4/4] Starting Frontend Server...
-start "Frontend (Vite)" /D "%FRONTEND_DIR%" cmd /k npm run dev
+start "Frontend (Vite)" /D "%FRONTEND_DIR%" cmd /k npm run dev -- --host
 
 echo.
 echo =======================================================
@@ -50,7 +50,8 @@ echo.
 echo The backend API is starting at:  http://localhost:8000
 echo The frontend is starting at:     http://localhost:5173
 echo.
-echo Two new terminal windows have been opened for the servers.
-echo To stop the servers, just close those terminal windows.
+echo For MOBILE access (same Wi-Fi), open:
+echo   Frontend: http://192.168.31.56:5173
+echo   Backend:  http://192.168.31.56:8000
 echo =======================================================
 pause
