@@ -83,6 +83,7 @@ const HIRING_RECOMMENDATION_OPTIONS = [
   "Highly Recommended",
   "Recommended",
   "Consider with Improvement",
+  "Not Recommended",
 ] as const;
 
 const DIFFICULTY_LEVEL_OPTIONS = ["Basic", "Intermediate", "Advanced"] as const;
@@ -100,6 +101,10 @@ const getRecommendationButtonClass = (option: string, selected: boolean): string
     return "bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-transparent shadow-lg shadow-blue-500/30";
   }
 
+  if (option === "Not Recommended") {
+    return "bg-gradient-to-r from-rose-500 to-red-600 text-white border-transparent shadow-lg shadow-rose-500/30";
+  }
+
   return "bg-gradient-to-r from-amber-500 to-orange-600 text-white border-transparent shadow-lg shadow-amber-500/30";
 };
 
@@ -111,10 +116,10 @@ const clampText = (value: unknown, maxLength: number): string => {
 const clampRating = (value: unknown): number => {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
-    return 3;
+    return 0;
   }
 
-  return Math.min(5, Math.max(1, Math.round(parsed)));
+  return Math.min(5, Math.max(0, Math.round(parsed)));
 };
 
 const getRequiredFieldLabel = (fieldId: string): string => {
@@ -128,6 +133,14 @@ const getRequiredFieldLabel = (fieldId: string): string => {
   };
 
   return labels[fieldId] ?? fieldId;
+};
+
+const getDisplayLabel = (label: string): string => {
+  if (label.toLowerCase().includes("recommend")) {
+    return "Hiring recommendation";
+  }
+
+  return label;
 };
 
 const isFilledText = (value: unknown): boolean => clampText(value, 10_000).length > 0;
@@ -271,6 +284,27 @@ const resolveStudentSubmittedFeedback = (
 };
 
 const DEFAULT_RATINGS: FeedbackStatus[string]["ratings"] = {
+  technicalKnowledge: 0,
+  codeQualityImplementation: 0,
+  taskCompletion: 0,
+  productivity: 0,
+  attentionToDetail: 0,
+  communicationClarity: 0,
+  reportingUpdates: 0,
+  punctuality: 0,
+  responsibility: 0,
+  discipline: 0,
+  collaboration: 0,
+  adaptability: 0,
+  opennessToFeedback: 0,
+  learningAbility: 0,
+  skillImprovement: 0,
+  initiativeToLearnNewThings: 0,
+  contributionToTeamProject: 0,
+  ownershipOfTasks: 0,
+};
+
+const SUBMITTED_FALLBACK_RATINGS: FeedbackStatus[string]["ratings"] = {
   technicalKnowledge: 3,
   codeQualityImplementation: 3,
   taskCompletion: 3,
@@ -289,6 +323,44 @@ const DEFAULT_RATINGS: FeedbackStatus[string]["ratings"] = {
   initiativeToLearnNewThings: 3,
   contributionToTeamProject: 3,
   ownershipOfTasks: 3,
+};
+
+const buildRatingsFromRecord = (record: unknown): FeedbackStatus[string]["ratings"] => {
+  const asObject = (record ?? {}) as Record<string, unknown>;
+  const nested = (asObject.ratings ?? {}) as Record<string, unknown>;
+
+  const candidate: Partial<FeedbackStatus[string]["ratings"]> = {
+    technicalKnowledge: Number(nested.technicalKnowledge ?? asObject.technicalKnowledge),
+    codeQualityImplementation: Number(nested.codeQualityImplementation ?? asObject.codeQualityImplementation),
+    taskCompletion: Number(nested.taskCompletion ?? asObject.taskCompletion),
+    productivity: Number(nested.productivity ?? asObject.productivity),
+    attentionToDetail: Number(nested.attentionToDetail ?? asObject.attentionToDetail),
+    communicationClarity: Number(nested.communicationClarity ?? asObject.communicationClarity),
+    reportingUpdates: Number(nested.reportingUpdates ?? asObject.reportingUpdates),
+    punctuality: Number(nested.punctuality ?? asObject.punctuality),
+    responsibility: Number(nested.responsibility ?? asObject.responsibility),
+    discipline: Number(nested.discipline ?? asObject.discipline),
+    collaboration: Number(nested.collaboration ?? asObject.collaboration),
+    adaptability: Number(nested.adaptability ?? asObject.adaptability),
+    opennessToFeedback: Number(nested.opennessToFeedback ?? asObject.opennessToFeedback),
+    learningAbility: Number(nested.learningAbility ?? asObject.learningAbility),
+    skillImprovement: Number(nested.skillImprovement ?? asObject.skillImprovement),
+    initiativeToLearnNewThings: Number(nested.initiativeToLearnNewThings ?? asObject.initiativeToLearnNewThings),
+    contributionToTeamProject: Number(nested.contributionToTeamProject ?? asObject.contributionToTeamProject),
+    ownershipOfTasks: Number(nested.ownershipOfTasks ?? asObject.ownershipOfTasks),
+  };
+
+  const hasPersistedRatings = Object.values(candidate).some((value) => Number.isFinite(value));
+  const base = hasPersistedRatings ? SUBMITTED_FALLBACK_RATINGS : DEFAULT_RATINGS;
+
+  const normalizedEntries = Object.entries(candidate)
+    .filter(([, value]) => Number.isFinite(value))
+    .map(([key, value]) => [key, clampRating(value)] as const);
+
+  return {
+    ...base,
+    ...Object.fromEntries(normalizedEntries),
+  } as FeedbackStatus[string]["ratings"];
 };
 
 const SYSTEM_META_MARKER = "[SYSTEM_META]";
@@ -492,7 +564,7 @@ export default function CompanyFeedbackForm() {
         const loadedStatus = records.reduce<FeedbackStatus>((accumulator, record) => {
           accumulator[record.studentId] = {
             submitted: true,
-            ratings: { ...DEFAULT_RATINGS, ...(record.ratings ?? {}) },
+            ratings: buildRatingsFromRecord(record),
             typeOfWorkHandled: record.typeOfWorkHandled ?? "",
             difficultyLevel: record.difficultyLevel ?? "Intermediate",
             overallRating: record.overallRating ?? 3,
@@ -520,7 +592,7 @@ export default function CompanyFeedbackForm() {
     ratings: DEFAULT_RATINGS,
     typeOfWorkHandled: "",
     difficultyLevel: "Intermediate",
-    overallRating: 3,
+    overallRating: 0,
     strengths: "",
     improvements: "",
     comments: "",
@@ -574,7 +646,7 @@ export default function CompanyFeedbackForm() {
   }, [apiBaseUrl, selectedStudent?.email]);
 
   const getDefaultTemplateValue = (type: FormTemplateField["type"]): string | number => {
-    return type === "slider" || type === "rating" ? 3 : "";
+    return type === "slider" || type === "rating" ? 0 : "";
   };
 
   const initializeTemplateValues = (template: FormTemplate) => {
@@ -583,6 +655,49 @@ export default function CompanyFeedbackForm() {
       return accumulator;
     }, {});
     setTemplateValues(defaults);
+  };
+
+  const buildTemplateValuesFromFeedback = (
+    template: FormTemplate,
+    feedback: FeedbackStatus[string]
+  ): Record<string, string | number> => {
+    return template.fields.reduce<Record<string, string | number>>((accumulator, field) => {
+      const normalizedLabel = field.label.toLowerCase();
+
+      if (field.type === "slider" || field.type === "rating") {
+        if (normalizedLabel.includes("technical")) accumulator[field.id] = feedback.ratings.technicalKnowledge;
+        else if (normalizedLabel.includes("code") || normalizedLabel.includes("implementation") || normalizedLabel.includes("quality")) accumulator[field.id] = feedback.ratings.codeQualityImplementation;
+        else if (normalizedLabel.includes("task completion")) accumulator[field.id] = feedback.ratings.taskCompletion;
+        else if (normalizedLabel.includes("productivity")) accumulator[field.id] = feedback.ratings.productivity;
+        else if (normalizedLabel.includes("detail")) accumulator[field.id] = feedback.ratings.attentionToDetail;
+        else if (normalizedLabel.includes("communication")) accumulator[field.id] = feedback.ratings.communicationClarity;
+        else if (normalizedLabel.includes("report")) accumulator[field.id] = feedback.ratings.reportingUpdates;
+        else if (normalizedLabel.includes("punctual")) accumulator[field.id] = feedback.ratings.punctuality;
+        else if (normalizedLabel.includes("responsib")) accumulator[field.id] = feedback.ratings.responsibility;
+        else if (normalizedLabel.includes("discipline")) accumulator[field.id] = feedback.ratings.discipline;
+        else if (normalizedLabel.includes("collaboration") || normalizedLabel.includes("teamwork")) accumulator[field.id] = feedback.ratings.collaboration;
+        else if (normalizedLabel.includes("adapt")) accumulator[field.id] = feedback.ratings.adaptability;
+        else if (normalizedLabel.includes("openness") || normalizedLabel.includes("feedback")) accumulator[field.id] = feedback.ratings.opennessToFeedback;
+        else if (normalizedLabel.includes("learning ability")) accumulator[field.id] = feedback.ratings.learningAbility;
+        else if (normalizedLabel.includes("skill improvement")) accumulator[field.id] = feedback.ratings.skillImprovement;
+        else if (normalizedLabel.includes("initiative")) accumulator[field.id] = feedback.ratings.initiativeToLearnNewThings;
+        else if (normalizedLabel.includes("contribution")) accumulator[field.id] = feedback.ratings.contributionToTeamProject;
+        else if (normalizedLabel.includes("ownership")) accumulator[field.id] = feedback.ratings.ownershipOfTasks;
+        else if (normalizedLabel.includes("overall")) accumulator[field.id] = feedback.overallRating;
+        else accumulator[field.id] = getDefaultTemplateValue(field.type);
+        return accumulator;
+      }
+
+      if (normalizedLabel.includes("strength")) accumulator[field.id] = feedback.strengths;
+      else if (normalizedLabel.includes("improvement") || normalizedLabel.includes("growth")) accumulator[field.id] = feedback.improvements;
+      else if (normalizedLabel.includes("recommend")) accumulator[field.id] = feedback.recommendation;
+      else if (normalizedLabel.includes("comment") || normalizedLabel.includes("feedback") || normalizedLabel.includes("remark")) accumulator[field.id] = feedback.comments;
+      else if (normalizedLabel.includes("type of work") || normalizedLabel.includes("work handled")) accumulator[field.id] = feedback.typeOfWorkHandled;
+      else if (normalizedLabel.includes("difficulty") || normalizedLabel.includes("level of tasks") || normalizedLabel.includes("level of work")) accumulator[field.id] = feedback.difficultyLevel;
+      else accumulator[field.id] = getDefaultTemplateValue(field.type);
+
+      return accumulator;
+    }, {});
   };
 
   useEffect(() => {
@@ -597,6 +712,8 @@ export default function CompanyFeedbackForm() {
       const studentFeedback = selectedStudentId ? feedbackStatus[selectedStudentId] : null;
       if (studentFeedback?.templateValues) {
         setTemplateValues({ ...studentFeedback.templateValues });
+      } else if (studentFeedback?.submitted) {
+        setTemplateValues(buildTemplateValuesFromFeedback(savedActiveTemplate, studentFeedback));
       } else {
         initializeTemplateValues(savedActiveTemplate);
       }
@@ -620,7 +737,7 @@ export default function CompanyFeedbackForm() {
       const normalizedLabel = field.label.toLowerCase();
 
       if (field.type === "slider" || field.type === "rating") {
-        const numericValue = Number(value ?? 3);
+        const numericValue = Number(value ?? 0);
         if (normalizedLabel.includes("technical")) mapped.ratings.technicalKnowledge = numericValue;
         else if (normalizedLabel.includes("code") || normalizedLabel.includes("implementation") || normalizedLabel.includes("quality")) mapped.ratings.codeQualityImplementation = numericValue;
         else if (normalizedLabel.includes("task completion")) mapped.ratings.taskCompletion = numericValue;
@@ -879,6 +996,13 @@ export default function CompanyFeedbackForm() {
     });
   };
 
+  function updateTemplateValue(fieldId: string, value: string | number) {
+    setTemplateValues((prev) => ({
+      ...prev,
+      [fieldId]: value,
+    }));
+  }
+
   const handleEditFeedback = () => {
     if (!selectedStudentId || !currentFeedback.submitted) {
       return;
@@ -930,7 +1054,7 @@ export default function CompanyFeedbackForm() {
       <Slider
         value={[value]}
         onValueChange={(vals) => !disabled && onChange(vals[0])}
-        min={1}
+        min={0}
         max={5}
         step={1}
         className="w-full"
@@ -1497,7 +1621,7 @@ export default function CompanyFeedbackForm() {
                             {field.type === "text" && !isDifficultyLevelField && (
                               <>
                                 <Label className="font-semibold">
-                                  {field.label}
+                                  {getDisplayLabel(field.label)}
                                   {field.required ? <span className="text-destructive ml-1">*</span> : null}
                                 </Label>
                                 <Input
@@ -1570,14 +1694,20 @@ export default function CompanyFeedbackForm() {
                                   {field.label}
                                   {field.required ? <span className="text-destructive ml-1">*</span> : null}
                                 </Label>
-                                <div className="flex flex-wrap gap-2">
+                                <div
+                                  className={
+                                    field.label.toLowerCase().includes("recommend")
+                                      ? "mt-2 grid grid-cols-1 sm:grid-cols-2 gap-3"
+                                      : "flex flex-wrap gap-2"
+                                  }
+                                >
                                   {(field.options && field.options.length > 0 ? field.options : [...HIRING_RECOMMENDATION_OPTIONS]).map((option) => (
                                     <button
                                       key={option}
                                       type="button"
                                       disabled={isReadOnly}
                                       onClick={() => updateTemplateValue(field.id, option)}
-                                      className={`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all duration-200 ${
+                                      className={`px-4 py-3 rounded-xl text-sm font-bold border transition-all duration-200 ${
                                         field.label.toLowerCase().includes("recommend")
                                           ? getRecommendationButtonClass(option, String(currentValue) === option)
                                           : String(currentValue) === option
@@ -1895,9 +2025,10 @@ export default function CompanyFeedbackForm() {
                     <div className="bg-card border border-border rounded-2xl p-6 shadow-md">
                       <h2 className="text-lg font-bold text-foreground mb-5">Section 10: Final Evaluation</h2>
                       <div className="space-y-4">
-                        <Label className="font-semibold">Hiring Recommendation (Highly Recommended / Recommended / Consider with Improvement)</Label>
+                        <Label className="font-semibold">Hiring recommendation</Label>
+                        <p className="text-xs text-muted-foreground">Highly Recommended / Recommended / Consider with Improvement / Not Recommended</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {["Highly Recommended", "Recommended", "Consider with Improvement"].map(
+                            {["Highly Recommended", "Recommended", "Consider with Improvement", "Not Recommended"].map(
                             (option) => (
                               <motion.button
                                 key={option}

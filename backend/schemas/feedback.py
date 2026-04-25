@@ -30,7 +30,7 @@ class CompanyToStudentFeedbackCreate(BaseFeedbackCreate):
     @field_validator("ratings")
     @classmethod
     def validate_ratings(cls, values: Dict[str, int]) -> Dict[str, int]:
-        return normalize_rating_map(values, min_value=1, max_value=5, max_metrics=32)
+        return normalize_rating_map(values, min_value=0, max_value=5, max_metrics=32)
 
 
 class StudentQuestionAnswerPayload(APIModel):

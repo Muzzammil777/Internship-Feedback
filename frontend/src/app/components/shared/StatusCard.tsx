@@ -18,19 +18,19 @@ export default function StatusCard({
 }: StatusCardProps) {
   const colorClasses = {
     primary: {
-      icon: "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/50",
+      icon: "bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/40",
       card: "border-indigo-100",
     },
     success: {
-      icon: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/50",
+      icon: "bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/40",
       card: "border-emerald-100",
     },
     warning: {
-      icon: "bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/50",
+      icon: "bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-amber-500/40",
       card: "border-amber-100",
     },
     accent: {
-      icon: "bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/50",
+      icon: "bg-gradient-to-br from-teal-500 to-cyan-600 text-white shadow-lg shadow-teal-500/40",
       card: "border-teal-100",
     },
   };
@@ -38,26 +38,34 @@ export default function StatusCard({
   return (
     <motion.div
       whileHover={{
-        y: -6,
-        transition: { duration: 0.2 }
+        y: -5,
+        transition: { duration: 0.2 },
       }}
-      className={`bg-card border ${colorClasses[color].card} rounded-2xl p-6 cursor-default shadow-md hover:shadow-xl transition-shadow duration-200`}
+      className={`relative bg-card border ${colorClasses[color].card} rounded-2xl p-5 cursor-default shadow-md hover:shadow-xl transition-shadow duration-200 h-[148px] flex flex-col justify-center overflow-visible`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-muted-foreground mb-2">{title}</p>
-          <p className="text-3xl font-bold text-foreground mb-1">{value}</p>
-          {description && (
-            <p className="text-sm text-muted-foreground mt-2">{description}</p>
-          )}
-        </div>
-        <motion.div
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          transition={{ type: "spring", stiffness: 300 }}
-          className={`p-3.5 rounded-xl ${colorClasses[color].icon}`}
-        >
-          <Icon className="w-6 h-6" />
-        </motion.div>
+      {/* Icon — absolutely pinned top-right, isolated from text flow */}
+      <motion.div
+        whileHover={{ scale: 1.12, rotate: 6 }}
+        transition={{ type: "spring", stiffness: 300, damping: 15 }}
+        className={`absolute top-4 right-4 p-3 rounded-xl ${colorClasses[color].icon}`}
+        style={{ transformOrigin: "center" }}
+      >
+        <Icon className="w-5 h-5" />
+      </motion.div>
+
+      {/* Text — padded right so it never overlaps the icon */}
+      <div className="pr-14 flex flex-col gap-1">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide leading-tight">
+          {title}
+        </p>
+        <p className="text-2xl font-bold text-foreground leading-tight">
+          {value}
+        </p>
+        {description && (
+          <p className="text-xs text-muted-foreground leading-snug">
+            {description}
+          </p>
+        )}
       </div>
     </motion.div>
   );
