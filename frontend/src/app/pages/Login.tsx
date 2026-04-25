@@ -4,7 +4,7 @@ import { useNavigate } from "react-router";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
-import { ArrowRight, Mail, Lock, Copy, Check, GraduationCap, Building2 } from "lucide-react";
+import { ArrowRight, Mail, Lock, Copy, Check, GraduationCap, Building2, Eye, EyeOff } from "lucide-react";
 import { useAuth, DEMO_USERS } from "../context/AuthContext";
 
 export default function Login() {
@@ -13,6 +13,7 @@ export default function Login() {
   const [selectedRole, setSelectedRole] = useState<"student" | "company" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [copiedStudent, setCopiedStudent] = useState(false);
   const [copiedAdmin, setCopiedAdmin] = useState(false);
@@ -281,13 +282,21 @@ export default function Login() {
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
                   <Input
                     id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
+                    className="pl-10 pr-10"
                     required
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
                 </div>
                 <p className="text-center text-sm text-muted-foreground leading-relaxed pt-1">
                   Use the credentials provided by your company to log in.

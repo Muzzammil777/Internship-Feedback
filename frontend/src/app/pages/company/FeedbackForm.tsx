@@ -29,6 +29,7 @@ import {
   SquarePen,
   MessageSquare,
   X,
+  Mail,
 } from "lucide-react";
 
 interface Student {
@@ -664,9 +665,13 @@ export default function CompanyFeedbackForm() {
     return mapped;
   };
 
-  const filteredStudents = students.filter((student) =>
-    student.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredStudents = students.filter((student) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      student.name.toLowerCase().includes(query) ||
+      student.email.toLowerCase().includes(query)
+    );
+  });
 
   const completedCount = Object.values(feedbackStatus).filter((f) => f.submitted).length;
 
@@ -1004,7 +1009,7 @@ export default function CompanyFeedbackForm() {
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
-              placeholder="Search students..."
+              placeholder="Search by name or email..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10 h-10"
@@ -1067,6 +1072,14 @@ export default function CompanyFeedbackForm() {
                       >
                         {student.Role}
                       </p>
+                      <p
+                        className={`text-[11px] truncate ${
+                          isSelected ? "text-white/70" : "text-muted-foreground"
+                        }`}
+                        title={student.email}
+                      >
+                        {student.email}
+                      </p>
                     </div>
                     <div className="flex-shrink-0">
                       {isCompleted ? (
@@ -1119,7 +1132,15 @@ export default function CompanyFeedbackForm() {
                   withRing={false}
                   photoUrl={student.profilePhoto}
                 />
-                <span className="text-xs font-semibold whitespace-nowrap">{student.name.split(' ')[0]}</span>
+                <span className="text-xs font-semibold whitespace-nowrap">{student.name.split(" ")[0]}</span>
+                <span
+                  className={`text-[11px] whitespace-nowrap max-w-[140px] truncate ${
+                    isSelected ? "text-white/80" : "text-muted-foreground"
+                  }`}
+                  title={student.email}
+                >
+                  {student.email}
+                </span>
                 {isCompleted && <CheckCircle2 className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-emerald-600'}`} />}
               </button>
             );
@@ -1216,7 +1237,11 @@ export default function CompanyFeedbackForm() {
                         <h1 className="text-lg sm:text-3xl font-bold text-foreground mb-2 break-words leading-tight">
                           {selectedStudent.name}
                         </h1>
-                        <div className="flex items-center justify-start gap-2 mb-3">
+                        <div className="inline-flex items-center gap-2 mb-2 min-w-0 rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5">
+                          <Mail className="w-4 h-4 text-primary flex-shrink-0" />
+                          <p className="text-sm font-semibold text-foreground break-all">{selectedStudent.email}</p>
+                        </div>
+                        <div className="ml-1 flex items-center justify-start gap-2 mb-3">
                           <Building2 className="w-4 h-4 text-primary" />
                           <span className="font-semibold text-foreground break-words leading-tight">
                             {selectedStudent.Role}

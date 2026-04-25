@@ -8,7 +8,7 @@ import SkillTag from "../../components/shared/SkillTag";
 import LoadingAnimation from "../../components/shared/LoadingAnimation";
 import { useAuth } from "../../context/AuthContext";
 import { apiFetch } from "../../lib/api";
-import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2 } from "lucide-react";
+import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 interface Task {
@@ -16,6 +16,39 @@ interface Task {
   title: string;
   description: string;
 }
+
+// Department options
+const DEPARTMENTS = [
+  "Computer Science and Engineering",
+  "Information Technology",
+  "Electronics and Communication",
+  "Electrical Engineering",
+  "Mechanical Engineering",
+  "Civil Engineering",
+  "Chemical Engineering",
+  "Biomedical Engineering",
+  "Aeronautical Engineering",
+  "Business Administration",
+  "Commerce",
+  "Economics",
+  "Other",
+];
+
+const OFFER_LETTER_OPTIONS = [
+  "Not Received",
+  "Received",
+  "Accepted",
+  "Rejected",
+  "Pending",
+];
+
+const NDA_OPTIONS = [
+  "Not Shared",
+  "Shared",
+  "Signed",
+  "Pending",
+  "Not Applicable",
+];
 
 export default function StudentProfile() {
   const { user } = useAuth();
@@ -26,6 +59,7 @@ export default function StudentProfile() {
   const [newSkill, setNewSkill] = useState("");
   const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
 
   const [formData, setFormData] = useState({
     name: "",
@@ -38,9 +72,49 @@ export default function StudentProfile() {
     endDate: "",
     supervisor: "",
     supervisorEmail: "",
+    hr: "",
+    manager: "",
+    offer_letter: "",
+    nda: "",
+    payment: "",
+    pmo: "",
   });
 
   const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Validation functions
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string): boolean => {
+    if (!phone) return true; // phone is optional
+    const phoneDigits = phone.replace(/\D/g, "");
+    return phoneDigits.length <= 10;
+  };
+
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+
+    // Email validation
+    if (formData.email && !validateEmail(formData.email)) {
+      newErrors.email = "Please enter a valid email address";
+    }
+
+    // Phone validation
+    if (formData.phone && !validatePhone(formData.phone)) {
+      newErrors.phone = "Phone number cannot exceed 10 digits";
+    }
+
+    // Supervisor email validation
+    if (formData.supervisorEmail && !validateEmail(formData.supervisorEmail)) {
+      newErrors.supervisorEmail = "Please enter a valid supervisor email address";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -61,6 +135,12 @@ export default function StudentProfile() {
             endDate: data.endDate || "",
             supervisor: data.supervisor || "",
             supervisorEmail: data.supervisorEmail || "",
+            hr: data.hr || "",
+            manager: data.manager || "",
+            offer_letter: data.offer_letter || "",
+            nda: data.nda || "",
+            payment: data.payment || "",
+            pmo: data.pmo || "",
           });
           setProfilePhoto(data.profilePhoto || null);
           setSkills(data.skills || []);
@@ -153,6 +233,12 @@ export default function StudentProfile() {
       return;
     }
 
+    // Validate form before saving
+    if (!validateForm()) {
+      toast.error("Please fix validation errors before saving");
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -174,6 +260,12 @@ export default function StudentProfile() {
           duration: calculateDuration(),
           supervisor: formData.supervisor,
           supervisorEmail: formData.supervisorEmail,
+          hr: formData.hr,
+          manager: formData.manager,
+          offer_letter: formData.offer_letter,
+          nda: formData.nda,
+          payment: formData.payment,
+          pmo: formData.pmo,
           skills,
           tasks,
         }),
@@ -407,18 +499,45 @@ export default function StudentProfile() {
                 <Input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="font-medium text-base"
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (e.target.value && !validateEmail(e.target.value)) {
+                      setErrors({ ...errors, email: "Please enter a valid email address" });
+                    } else {
+                      setErrors({ ...errors, email: "" });
+                    }
+                  }}
+                  className={`font-medium text-base ${errors.email ? "border-red-500" : ""}`}
                 />
+                {errors.email && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.email}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Phone Number</Label>
                 <Input
                   type="tel"
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="font-medium text-base"
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value });
+                    if (e.target.value && !validatePhone(e.target.value)) {
+                      setErrors({ ...errors, phone: "Phone number cannot exceed 10 digits" });
+                    } else {
+                      setErrors({ ...errors, phone: "" });
+                    }
+                  }}
+                  placeholder="10-digit phone number"
+                  className={`font-medium text-base ${errors.phone ? "border-red-500" : ""}`}
                 />
+                {errors.phone && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.phone}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">COLLEGE</Label>
@@ -430,12 +549,18 @@ export default function StudentProfile() {
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">DEPARTMENT</Label>
-                <Input
+                <select
                   value={formData.COLLEGE_DEPARTMENT}
                   onChange={(e) => setFormData({ ...formData, COLLEGE_DEPARTMENT: e.target.value })}
-                  placeholder="e.g., Computer Science and Engineering"
-                  className="font-medium text-base"
-                />
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background font-medium text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select a department</option>
+                  {DEPARTMENTS.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </motion.div>
@@ -472,6 +597,7 @@ export default function StudentProfile() {
                 <Input
                   value={formData.supervisor}
                   onChange={(e) => setFormData({ ...formData, supervisor: e.target.value })}
+                  placeholder="Enter supervisor name"
                   className="font-medium text-base"
                 />
               </div>
@@ -480,9 +606,23 @@ export default function StudentProfile() {
                 <Input
                   type="email"
                   value={formData.supervisorEmail}
-                  onChange={(e) => setFormData({ ...formData, supervisorEmail: e.target.value })}
-                  className="font-medium text-base"
+                  onChange={(e) => {
+                    setFormData({ ...formData, supervisorEmail: e.target.value });
+                    if (e.target.value && !validateEmail(e.target.value)) {
+                      setErrors({ ...errors, supervisorEmail: "Please enter a valid email address" });
+                    } else {
+                      setErrors({ ...errors, supervisorEmail: "" });
+                    }
+                  }}
+                  placeholder="Enter supervisor email"
+                  className={`font-medium text-base ${errors.supervisorEmail ? "border-red-500" : ""}`}
                 />
+                {errors.supervisorEmail && (
+                  <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.supervisorEmail}
+                  </div>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Start Date</Label>
@@ -507,6 +647,74 @@ export default function StudentProfile() {
                   />
                   <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
                 </div>
+              </div>
+
+              {/* New Internship Details Fields */}
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">HR Name</Label>
+                <Input
+                  value={formData.hr}
+                  onChange={(e) => setFormData({ ...formData, hr: e.target.value })}
+                  placeholder="Human Resources name"
+                  className="font-medium text-base"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Manager Name</Label>
+                <Input
+                  value={formData.manager}
+                  onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
+                  placeholder="Manager name"
+                  className="font-medium text-base"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Offer Letter</Label>
+                <select
+                  value={formData.offer_letter}
+                  onChange={(e) => setFormData({ ...formData, offer_letter: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background font-medium text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select offer letter status</option>
+                  {OFFER_LETTER_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">NDA</Label>
+                <select
+                  value={formData.nda}
+                  onChange={(e) => setFormData({ ...formData, nda: e.target.value })}
+                  className="w-full px-3 py-2 border border-input rounded-md bg-background font-medium text-base focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Select NDA status</option>
+                  {NDA_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Payment</Label>
+                <Input
+                  value={formData.payment}
+                  onChange={(e) => setFormData({ ...formData, payment: e.target.value })}
+                  placeholder="Stipend/Payment amount or status"
+                  className="font-medium text-base"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">PMO</Label>
+                <Input
+                  value={formData.pmo}
+                  onChange={(e) => setFormData({ ...formData, pmo: e.target.value })}
+                  placeholder="Project Management Office contact"
+                  className="font-medium text-base"
+                />
               </div>
             </div>
           </motion.div>

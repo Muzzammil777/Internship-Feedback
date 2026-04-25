@@ -21,6 +21,8 @@ import {
   Trash2,
   Pencil,
   Lock,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -44,6 +46,12 @@ interface Student {
   Role: string;
   supervisor: string;
   supervisorEmail: string;
+  hr?: string;
+  manager?: string;
+  offer_letter?: string;
+  nda?: string;
+  payment?: string;
+  pmo?: string;
   startDate: string;
   endDate: string;
   duration: string;
@@ -82,6 +90,7 @@ export default function CompanyStudentDetails() {
   const [showGeneratedPassword, setShowGeneratedPassword] = useState(false);
   const [customPassword, setCustomPassword] = useState("");
   const [showCustomPassword, setShowCustomPassword] = useState(false);
+  const [showNewStudentPassword, setShowNewStudentPassword] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
@@ -91,6 +100,12 @@ export default function CompanyStudentDetails() {
     Role: "",
     supervisor: "",
     supervisorEmail: "",
+    hr: "",
+    manager: "",
+    offer_letter: "",
+    nda: "",
+    payment: "",
+    pmo: "",
     startDate: "",
     endDate: "",
   });
@@ -204,6 +219,7 @@ export default function CompanyStudentDetails() {
   const closeModal = () => {
     setIsAddModalOpen(false);
     setShowSuccess(false);
+    setShowNewStudentPassword(false);
     setNewStudentForm({
       name: "",
       email: "",
@@ -269,6 +285,12 @@ export default function CompanyStudentDetails() {
       Role: student.Role || "",
       supervisor: student.supervisor || "",
       supervisorEmail: student.supervisorEmail || "",
+      hr: student.hr || "",
+      manager: student.manager || "",
+      offer_letter: student.offer_letter || "",
+      nda: student.nda || "",
+      payment: student.payment || "",
+      pmo: student.pmo || "",
       startDate: student.startDate || "",
       endDate: student.endDate || "",
     });
@@ -391,6 +413,12 @@ export default function CompanyStudentDetails() {
             duration: calculateDuration(editForm.startDate, editForm.endDate),
             supervisor: editForm.supervisor,
             supervisorEmail: editForm.supervisorEmail,
+            hr: editForm.hr,
+            manager: editForm.manager,
+            offer_letter: editForm.offer_letter,
+            nda: editForm.nda,
+            payment: editForm.payment,
+            pmo: editForm.pmo,
             skills: editSkills,
             tasks: editTasks,
           }),
@@ -768,18 +796,28 @@ export default function CompanyStudentDetails() {
                           Password
                           <span className="text-destructive ml-1">*</span>
                         </Label>
-                        <Input
-                          required
-                          type="password"
-                          value={newStudentForm.password}
-                          onChange={(e) =>
-                            setNewStudentForm({ ...newStudentForm, password: e.target.value })
-                          }
-                          placeholder="Enter a secure password"
-                          className="text-base"
-                          disabled={isSubmitting}
-                          minLength={6}
-                        />
+                        <div className="relative">
+                          <Input
+                            required
+                            type={showNewStudentPassword ? "text" : "password"}
+                            value={newStudentForm.password}
+                            onChange={(e) =>
+                              setNewStudentForm({ ...newStudentForm, password: e.target.value })
+                            }
+                            placeholder="Enter a secure password"
+                            className="text-base pr-10"
+                            disabled={isSubmitting}
+                            minLength={6}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewStudentPassword((prev) => !prev)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label={showNewStudentPassword ? "Hide password" : "Show password"}
+                          >
+                            {showNewStudentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
                         <p className="text-xs text-muted-foreground">
                           Minimum 6 characters
                         </p>
@@ -1171,6 +1209,54 @@ export default function CompanyStudentDetails() {
                     {selectedStudent.startDate || "Not set"} - {selectedStudent.endDate || "Not set"}
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    HR
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.hr || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    Manager
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.manager || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    Offer Letter
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.offer_letter || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    NDA
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.nda || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    Payment
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.payment || "N/A"}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                    PMO
+                  </span>
+                  <div className="text-base font-semibold text-foreground">
+                    {selectedStudent.pmo || "N/A"}
+                  </div>
+                </div>
               </div>
             </InfoSection>
           </motion.div>
@@ -1392,6 +1478,54 @@ export default function CompanyStudentDetails() {
                         />
                       </div>
                       <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">HR</Label>
+                        <Input
+                          value={editForm.hr}
+                          onChange={(e) => setEditForm({ ...editForm, hr: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Manager</Label>
+                        <Input
+                          value={editForm.manager}
+                          onChange={(e) => setEditForm({ ...editForm, manager: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Offer Letter</Label>
+                        <Input
+                          value={editForm.offer_letter}
+                          onChange={(e) => setEditForm({ ...editForm, offer_letter: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">NDA</Label>
+                        <Input
+                          value={editForm.nda}
+                          onChange={(e) => setEditForm({ ...editForm, nda: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Payment</Label>
+                        <Input
+                          value={editForm.payment}
+                          onChange={(e) => setEditForm({ ...editForm, payment: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">PMO</Label>
+                        <Input
+                          value={editForm.pmo}
+                          onChange={(e) => setEditForm({ ...editForm, pmo: e.target.value })}
+                          className="text-base"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <Label className="text-sm font-semibold text-foreground">Start Date</Label>
                         <Input
                           type="date"
@@ -1546,40 +1680,44 @@ export default function CompanyStudentDetails() {
                       Set Custom Password
                       <span className="text-xs text-muted-foreground font-normal ml-1">(Optional)</span>
                     </Label>
-                    <div className="flex gap-2">
+                    <div className="relative">
                       <Input
                         type={showCustomPassword ? "text" : "password"}
                         value={customPassword}
                         onChange={(e) => setCustomPassword(e.target.value)}
                         placeholder="Leave blank to auto-generate"
                         minLength={6}
+                        className="pr-10"
                       />
-                      <Button
+                      <button
                         type="button"
-                        variant="outline"
                         onClick={() => setShowCustomPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        aria-label={showCustomPassword ? "Hide password" : "Show password"}
                       >
-                        {showCustomPassword ? "Hide" : "Show"}
-                      </Button>
+                        {showCustomPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
                     </div>
                   </div>
 
                   {generatedPassword && (
                     <div className="space-y-2">
                       <Label className="text-sm font-semibold text-foreground">New Password</Label>
-                      <div className="flex gap-2">
+                      <div className="relative">
                         <Input
                           type={showGeneratedPassword ? "text" : "password"}
                           value={generatedPassword}
                           readOnly
+                          className="pr-10"
                         />
-                        <Button
+                        <button
                           type="button"
-                          variant="outline"
                           onClick={() => setShowGeneratedPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          aria-label={showGeneratedPassword ? "Hide password" : "Show password"}
                         >
-                          {showGeneratedPassword ? "Hide" : "Show"}
-                        </Button>
+                          {showGeneratedPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
                   )}

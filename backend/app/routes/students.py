@@ -62,6 +62,12 @@ class UpdateStudentProfileRequest(BaseModel):
     duration: str = Field(default="", max_length=64)
     supervisor: str = Field(default="", max_length=120)
     supervisorEmail: str = Field(default="", max_length=254)
+    hr: str = Field(default="", max_length=120)
+    manager: str = Field(default="", max_length=120)
+    offer_letter: str = Field(default="", max_length=500)
+    nda: str = Field(default="", max_length=500)
+    payment: str = Field(default="", max_length=120)
+    pmo: str = Field(default="", max_length=120)
     skills: list[str] = Field(default_factory=list, max_length=50)
     tasks: list[TaskPayload] = Field(default_factory=list, max_length=50)
 
@@ -117,6 +123,12 @@ def _serialize(doc: dict) -> dict:
     serialized.setdefault("endDate", "")
     serialized.setdefault("duration", "")
     serialized.setdefault("company_name", "")
+    serialized.setdefault("hr", "")
+    serialized.setdefault("manager", "")
+    serialized.setdefault("offer_letter", "")
+    serialized.setdefault("nda", "")
+    serialized.setdefault("payment", "")
+    serialized.setdefault("pmo", "")
 
     serialized["Role"] = serialized.get("role_title", "")
     serialized["COLLEGE"] = serialized.get("college", "")
@@ -192,6 +204,12 @@ async def create_student(
         "startDate": "",
         "endDate": "",
         "duration": "",
+        "hr": "",
+        "manager": "",
+        "offer_letter": "",
+        "nda": "",
+        "payment": "",
+        "pmo": "",
     }
 
     student_result = None
@@ -254,6 +272,12 @@ async def update_student_profile(
         "duration": payload.duration,
         "supervisor": payload.supervisor,
         "supervisorEmail": payload.supervisorEmail,
+        "hr": payload.hr,
+        "manager": payload.manager,
+        "offer_letter": payload.offer_letter,
+        "nda": payload.nda,
+        "payment": payload.payment,
+        "pmo": payload.pmo,
         "skills": payload.skills,
         "tasks": [task.model_dump() for task in payload.tasks],
     }
