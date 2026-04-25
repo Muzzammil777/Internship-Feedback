@@ -416,10 +416,10 @@ export default function StudentFeedback() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-8 py-6 sm:py-10">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="mb-8">
-          <div className="bg-card border border-border rounded-2xl p-2 shadow-md inline-flex gap-2">
+          <div className="bg-card border border-border rounded-2xl p-2 shadow-md flex gap-2 overflow-x-auto">
             <button
               onClick={() => setActiveTab("company")}
-              className={`px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+              className={`flex-shrink-0 px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
                 activeTab === "company"
                   ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -432,7 +432,7 @@ export default function StudentFeedback() {
             </button>
             <button
               onClick={() => setActiveTab("student")}
-              className={`px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
+              className={`flex-shrink-0 px-4 sm:px-6 py-3 rounded-xl font-bold text-sm transition-all duration-200 ${
                 activeTab === "student"
                   ? "bg-gradient-to-r from-teal-500 to-cyan-600 text-white shadow-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-secondary"
@@ -607,17 +607,17 @@ export default function StudentFeedback() {
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
               <div>
-                <h2 className="text-2xl font-bold text-foreground">Your Feedback About Company</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground">Your Feedback About Company</h2>
                 <p className="text-sm text-muted-foreground mt-1">
                   Share your internship experience at {profile?.company_name || profile?.companyName || "your organization"}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-sky-100 text-sky-800 rounded-xl text-xs font-bold uppercase tracking-wide border border-sky-200">
-                  Average: {average === null ? "0.00" : average.toFixed(2)} / 5
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="px-3 py-1.5 bg-sky-100 text-sky-800 rounded-xl text-xs font-bold uppercase tracking-wide border border-sky-200">
+                  Avg: {average === null ? "0.00" : average.toFixed(2)} / 5
                 </div>
                 {isSubmitted && (
-                  <div className="px-4 py-2 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-emerald-200 flex items-center gap-2">
+                  <div className="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-xl text-xs font-bold uppercase tracking-wide border border-emerald-200 flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4" />
                     Submitted
                   </div>
@@ -652,7 +652,7 @@ export default function StudentFeedback() {
               ))}
 
               {!isSubmitted && (
-                <Button type="submit" disabled={isSaving} className="flex items-center gap-2">
+                <Button type="submit" disabled={isSaving} className="w-full sm:w-auto flex items-center justify-center gap-2">
                   <Send className="w-4 h-4" />
                   {isSaving ? "Saving..." : "Submit Feedback"}
                 </Button>

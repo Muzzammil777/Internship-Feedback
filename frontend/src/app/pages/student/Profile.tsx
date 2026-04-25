@@ -472,7 +472,7 @@ export default function StudentProfile() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            className="bg-card border border-border rounded-2xl p-5 sm:p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
             <div className="flex items-center gap-3 mb-8">
               <div className="p-3 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-lg shadow-primary/50">
@@ -886,11 +886,11 @@ export default function StudentProfile() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.6 }}
-            className="flex justify-end pt-4 pb-12"
+            className="flex flex-col sm:flex-row sm:justify-end pt-4 pb-12 gap-3"
           >
             <Button
               size="lg"
-              className="flex items-center gap-2 shadow-lg"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg"
               onClick={handleSave}
               type="button"
               disabled={isSaving}
