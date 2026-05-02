@@ -495,11 +495,11 @@ export default function CompanyStudentDetails() {
                     Select a student to view details and provide feedback
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/10 rounded-xl border border-primary/20">
-                    <Users className="w-5 h-5 text-primary" />
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 px-5 py-3 bg-primary/10 rounded-xl border border-primary/20">
+                    <Users className="w-6 h-6 text-primary" />
                     <div>
-                      <div className="text-xl font-bold text-primary">
+                      <div className="text-2xl font-bold text-primary">
                         {students.length}
                       </div>
                       <div className="text-xs text-muted-foreground font-medium">
@@ -617,20 +617,20 @@ export default function CompanyStudentDetails() {
                             </div>
 
                             {/* Duration Info */}
-                            <div className="flex flex-wrap items-center justify-between gap-y-2">
-                              <div className="text-sm text-muted-foreground min-w-0">
+                            <div className="flex items-center justify-between">
+                              <div className="text-sm text-muted-foreground">
                                 <span className="font-medium">Duration: </span>
                                 <span className="font-semibold text-foreground">
                                   {student.duration}
                                 </span>
-                                <span className="mx-1.5">•</span>
-                                <span className="break-all">
+                                <span className="mx-2">•</span>
+                                <span>
                                   {student.startDate} - {student.endDate}
                                 </span>
                               </div>
 
                               {/* View Details Action */}
-                              <div className="flex items-center gap-1 text-primary flex-shrink-0 ml-auto">
+                              <div className="flex items-center gap-1 text-primary flex-shrink-0">
                                 <span className="text-sm font-bold group-hover:underline">
                                   View Details
                                 </span>
@@ -935,7 +935,7 @@ export default function CompanyStudentDetails() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+            <div className="mb-6 flex items-center justify-between gap-3">
               <Button
                 variant="ghost"
                 onClick={() => setSelectedStudent(null)}
@@ -944,27 +944,7 @@ export default function CompanyStudentDetails() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Student List
               </Button>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={openPasswordModal}
-                  className="flex items-center gap-2"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span className="hidden sm:inline">Change Password</span>
-                  <span className="sm:hidden">Password</span>
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => selectedStudent && openEditModal(selectedStudent)}
-                  className="flex items-center gap-2"
-                >
-                  <Pencil className="w-4 h-4" />
-                  <span className="hidden sm:inline">Edit Profile</span>
-                  <span className="sm:hidden">Edit</span>
-                </Button>
+              <div className="flex items-center gap-2">
                 <Button
                   variant="destructive"
                   onClick={handleDeleteStudent}
@@ -972,10 +952,30 @@ export default function CompanyStudentDetails() {
                   className="flex items-center gap-2"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">{isDeletingStudent ? "Removing..." : "Remove Student"}</span>
-                  <span className="sm:hidden">{isDeletingStudent ? "..." : "Remove"}</span>
+                  {isDeletingStudent ? "Removing..." : "Remove Student"}
                 </Button>
               </div>
+            </div>
+
+            <div className="mb-4 flex justify-end gap-2">
+              <Button
+                variant="outline"
+                type="button"
+                onClick={openPasswordModal}
+                className="flex items-center gap-2"
+              >
+                <Lock className="w-4 h-4" />
+                Change Password
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => selectedStudent && openEditModal(selectedStudent)}
+                className="flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                Edit Profile
+              </Button>
             </div>
 
             {apiError && (

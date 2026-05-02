@@ -6,7 +6,7 @@ import { Textarea } from "../../components/ui/textarea";
 import { Label } from "../../components/ui/label";
 import SkillTag from "../../components/shared/SkillTag";
 import LoadingAnimation from "../../components/shared/LoadingAnimation";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth, DEMO_USERS } from "../../context/AuthContext";
 import { apiFetch } from "../../lib/api";
 import { Plus, Save, User, Building2, Briefcase, Code, Upload, Camera, GraduationCap, Calendar, CheckCircle2, X, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -52,6 +52,7 @@ const NDA_OPTIONS = [
 
 export default function StudentProfile() {
   const { user } = useAuth();
+  const isDemoStudent = user?.email === DEMO_USERS.student.email;
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:8000";
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -472,7 +473,7 @@ export default function StudentProfile() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="bg-card border border-border rounded-2xl p-5 sm:p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+            className="bg-card border border-border rounded-2xl p-8 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
           >
             <div className="flex items-center gap-3 mb-8">
               <div className="p-3 bg-gradient-to-br from-primary to-purple-600 rounded-xl shadow-lg shadow-primary/50">
@@ -494,12 +495,22 @@ export default function StudentProfile() {
                   className="font-medium text-base"
                 />
               </div>
+              {/* Email — locked for demo account only */}
               <div className="space-y-2">
-                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground">Email</Label>
+                <Label className="font-semibold text-xs uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
+                  Email
+                  {isDemoStudent && (
+                    <span className="inline-flex items-center gap-1 text-xs font-normal text-muted-foreground/70 normal-case tracking-normal">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                      cannot be changed
+                    </span>
+                  )}
+                </Label>
                 <Input
                   type="email"
                   value={formData.email}
-                  onChange={(e) => {
+                  readOnly={isDemoStudent}
+                  onChange={isDemoStudent ? undefined : (e) => {
                     setFormData({ ...formData, email: e.target.value });
                     if (e.target.value && !validateEmail(e.target.value)) {
                       setErrors({ ...errors, email: "Please enter a valid email address" });
@@ -507,9 +518,15 @@ export default function StudentProfile() {
                       setErrors({ ...errors, email: "" });
                     }
                   }}
-                  className={`font-medium text-base ${errors.email ? "border-red-500" : ""}`}
+                  className={`font-medium text-base ${
+                    isDemoStudent
+                      ? "cursor-not-allowed opacity-75 bg-muted/50"
+                      : errors.email
+                      ? "border-red-500"
+                      : ""
+                  }`}
                 />
-                {errors.email && (
+                {!isDemoStudent && errors.email && (
                   <div className="flex items-center gap-2 text-red-600 text-sm mt-1">
                     <AlertCircle className="w-4 h-4" />
                     {errors.email}
@@ -886,11 +903,11 @@ export default function StudentProfile() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.6 }}
-            className="flex flex-col sm:flex-row sm:justify-end pt-4 pb-12 gap-3"
+            className="flex justify-end pt-4 pb-12"
           >
             <Button
               size="lg"
-              className="w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg"
+              className="flex items-center gap-2 shadow-lg"
               onClick={handleSave}
               type="button"
               disabled={isSaving}

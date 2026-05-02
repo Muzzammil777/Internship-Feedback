@@ -1256,7 +1256,15 @@ export default function CompanyFeedbackForm() {
                   withRing={false}
                   photoUrl={student.profilePhoto}
                 />
-                <span className="text-xs font-semibold whitespace-nowrap" title={student.email}>{student.name.split(" ")[0]}</span>
+                <span className="text-xs font-semibold whitespace-nowrap">{student.name.split(" ")[0]}</span>
+                <span
+                  className={`text-[11px] whitespace-nowrap max-w-[140px] truncate ${
+                    isSelected ? "text-white/80" : "text-muted-foreground"
+                  }`}
+                  title={student.email}
+                >
+                  {student.email}
+                </span>
                 {isCompleted && <CheckCircle2 className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-emerald-600'}`} />}
               </button>
             );
@@ -2067,11 +2075,11 @@ export default function CompanyFeedbackForm() {
 
                 {/* Submit Button */}
                 {(!currentFeedback.submitted || isEditMode) && (
-                  <div className="flex flex-col sm:flex-row sm:justify-end gap-3 pt-4">
+                  <div className="flex justify-end gap-3 pt-4">
                     <Button
                       type="submit"
                       size="lg"
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 shadow-lg"
+                      className="flex items-center gap-2 shadow-lg"
                       disabled={isSaving}
                     >
                       <Send className="w-4 h-4" />
