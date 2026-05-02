@@ -12,6 +12,7 @@ from app.routes.auth import router as auth_router
 from app.routes.health import router as health_router
 from app.routes.feedback import router as feedback_router
 from app.routes.students import router as students_router
+from app.routes.certificates import router as certificates_router
 
 settings = get_settings()
 
@@ -32,11 +33,12 @@ app.include_router(health_router)
 app.include_router(auth_router)
 app.include_router(feedback_router)
 app.include_router(students_router)
+app.include_router(certificates_router)
 
 
 @app.middleware("http")
 async def authenticate_sensitive_requests(request: Request, call_next):
-    protected_paths = ("/students", "/feedback")
+    protected_paths = ("/students", "/feedback", "/certificates")
     path = request.url.path
 
     if request.method != "OPTIONS" and any(path == prefix or path.startswith(f"{prefix}/") for prefix in protected_paths):
