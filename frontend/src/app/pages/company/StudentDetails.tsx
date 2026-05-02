@@ -23,6 +23,8 @@ import {
   Lock,
   Eye,
   EyeOff,
+  Award,
+  UploadCloud,
 } from "lucide-react";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -91,6 +93,15 @@ export default function CompanyStudentDetails() {
   const [customPassword, setCustomPassword] = useState("");
   const [showCustomPassword, setShowCustomPassword] = useState(false);
   const [showNewStudentPassword, setShowNewStudentPassword] = useState(false);
+
+  // Certificate state
+  const [isCertModalOpen, setIsCertModalOpen] = useState(false);
+  const [certFile, setCertFile] = useState<File | null>(null);
+  const [isUploadingCert, setIsUploadingCert] = useState(false);
+  const [certUploadError, setCertUploadError] = useState("");
+  const [certUploadSuccess, setCertUploadSuccess] = useState(false);
+  const [certAlreadyIssued, setCertAlreadyIssued] = useState(false);
+  const [isFetchingCertStatus, setIsFetchingCertStatus] = useState(false);
   const [editForm, setEditForm] = useState({
     name: "",
     email: "",
@@ -976,6 +987,34 @@ export default function CompanyStudentDetails() {
                 <Pencil className="w-4 h-4" />
                 Edit Profile
               </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  setCertFile(null);
+                  setCertUploadError("");
+                  setCertUploadSuccess(false);
+                  setCertAlreadyIssued(false);
+                  setIsFetchingCertStatus(true);
+                  setIsCertModalOpen(true);
+                  try {
+                    const res = await apiFetch(
+                      `${API_BASE}/certificates/${encodeURIComponent(selectedStudent?.email ?? "")}`
+                    );
+                    if (res.ok) {
+                      const data = (await res.json()) as { available: boolean };
+                      setCertAlreadyIssued(data.available);
+                    }
+                  } catch {
+                    // non-fatal
+                  } finally {
+                    setIsFetchingCertStatus(false);
+                  }
+                }}
+                className="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0"
+              >
+                <Award className="w-4 h-4" />
+                Issue Certificate
+              </Button>
             </div>
 
             {apiError && (
@@ -1731,6 +1770,240 @@ export default function CompanyStudentDetails() {
                     </Button>
                   </div>
                 </form>
+              </motion.div>
+            </div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* ── Certificate Upload Modal ── */}
+      <AnimatePresence>
+        {isCertModalOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsCertModalOpen(false)}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            />
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-card border border-border rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Modal Header */}
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 px-6 py-5 border-b border-border">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl shadow-md">
+                        <Award className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h2 className="text-xl font-bold text-foreground">Issue Certificate</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Upload PDF for{" "}
+                          <span className="font-semibold text-foreground">
+                            {selectedStudent?.name}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsCertModalOpen(false)}
+                      className="p-1.5 hover:bg-white/60 rounded-lg transition-colors"
+                    >
+                      <X className="w-5 h-5 text-muted-foreground" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Modal Body */}
+                <div className="p-6 space-y-5">
+
+                  {/* Checking cert status spinner */}
+                  {isFetchingCertStatus && (
+                    <div className="flex items-center justify-center gap-3 py-4">
+                      <svg className="animate-spin w-5 h-5 text-amber-500" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                      </svg>
+                      <span className="text-sm text-muted-foreground">Checking certificate status...</span>
+                    </div>
+                  )}
+
+                  {/* Already issued notice */}
+                  {!isFetchingCertStatus && certAlreadyIssued && !certUploadSuccess && (
+                    <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
+                      <Award className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-bold text-amber-900 text-sm">Certificate Already Issued</p>
+                        <p className="text-amber-700 text-xs mt-0.5">
+                          A certificate has already been issued for{" "}
+                          <span className="font-semibold">{selectedStudent?.name}</span>.
+                          Upload a new PDF below to replace it.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Feedback messages */}
+                  <AnimatePresence mode="wait">
+                    {certUploadSuccess && (
+                      <motion.div
+                        key="cert-success"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl p-4"
+                      >
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0" />
+                        <div>
+                          <p className="font-bold text-emerald-900 text-sm">Certificate Issued!</p>
+                          <p className="text-emerald-700 text-xs">The student can now download it from their Downloads page.</p>
+                        </div>
+                      </motion.div>
+                    )}
+                    {certUploadError && (
+                      <motion.div
+                        key="cert-error"
+                        initial={{ opacity: 0, y: -8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl p-4"
+                      >
+                        <X className="w-5 h-5 text-red-500 flex-shrink-0" />
+                        <p className="text-red-700 text-sm">{certUploadError}</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Upload drop zone */}
+                  <div>
+                    <Label className="text-sm font-semibold text-foreground mb-2 block">
+                      Certificate PDF <span className="text-destructive">*</span>
+                    </Label>
+                    <label
+                      htmlFor="cert-file-input"
+                      className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-xl p-8 cursor-pointer transition-colors ${
+                        certFile
+                          ? "border-amber-400 bg-amber-50"
+                          : "border-border hover:border-amber-400 hover:bg-amber-50/40"
+                      }`}
+                    >
+                      <UploadCloud
+                        className={`w-10 h-10 ${
+                          certFile ? "text-amber-500" : "text-muted-foreground"
+                        }`}
+                      />
+                      {certFile ? (
+                        <div className="text-center">
+                          <p className="font-semibold text-foreground text-sm">{certFile.name}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {(certFile.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-foreground">Click to select PDF</p>
+                          <p className="text-xs text-muted-foreground mt-1">PDF only · Max 10 MB</p>
+                        </div>
+                      )}
+                    </label>
+                    <input
+                      id="cert-file-input"
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0] ?? null;
+                        setCertUploadError("");
+                        setCertUploadSuccess(false);
+                        if (f && f.type !== "application/pdf") {
+                          setCertUploadError("Only PDF files are accepted.");
+                          setCertFile(null);
+                          return;
+                        }
+                        if (f && f.size > 10 * 1024 * 1024) {
+                          setCertUploadError("File must be 10 MB or smaller.");
+                          setCertFile(null);
+                          return;
+                        }
+                        setCertFile(f);
+                      }}
+                    />
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-3 justify-end pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsCertModalOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={!certFile || isUploadingCert}
+                      onClick={async () => {
+                        if (!certFile || !selectedStudent) return;
+                        setIsUploadingCert(true);
+                        setCertUploadError("");
+                        setCertUploadSuccess(false);
+                        try {
+                          const formData = new FormData();
+                          formData.append("file", certFile);
+                          const res = await apiFetch(
+                            `${API_BASE}/certificates/${encodeURIComponent(selectedStudent.email)}`,
+                            { method: "POST", body: formData }
+                          );
+                          if (!res.ok) {
+                            const err = (await res.json()) as { detail?: string };
+                            throw new Error(err.detail ?? "Upload failed");
+                          }
+                          setCertUploadSuccess(true);
+                          setCertFile(null);
+                          // reset the file input
+                          const inp = document.getElementById("cert-file-input") as HTMLInputElement | null;
+                          if (inp) inp.value = "";
+                        } catch (err) {
+                          setCertUploadError(
+                            err instanceof Error ? err.message : "Failed to upload certificate."
+                          );
+                        } finally {
+                          setIsUploadingCert(false);
+                        }
+                      }}
+                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white border-0 flex items-center gap-2"
+                    >
+                      {isUploadingCert ? (
+                        <>
+                          <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                          </svg>
+                          Uploading...
+                        </>
+                      ) : certAlreadyIssued ? (
+                        <>
+                          <UploadCloud className="w-4 h-4" />
+                          Replace Certificate
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-4 h-4" />
+                          Upload Certificate
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               </motion.div>
             </div>
           </>

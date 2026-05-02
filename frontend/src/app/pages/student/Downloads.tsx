@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../../components/ui/button";
 import { Download, FileText, Award, Building2, File, Loader2 } from "lucide-react";
 import LoadingAnimation from "../../components/shared/LoadingAnimation";
@@ -372,6 +372,10 @@ export default function StudentDownloads() {
   const [isDownloadingAll, setIsDownloadingAll] = useState(false);
   const logoDataUrlRef = useRef<string | null>(null);
 
+  // Certificate state
+  const [certificate, setCertificate] = useState<string | null>(null);
+  const [certAvailable, setCertAvailable] = useState(false);
+
   useEffect(() => {
     const loadDownloadsData = async () => {
       if (!user?.email) {
@@ -402,6 +406,18 @@ export default function StudentDownloads() {
         if (studentFeedbackRes.ok) {
           const studentFeedbackRecords = (await studentFeedbackRes.json()) as StudentFeedback[];
           setStudentFeedback(studentFeedbackRecords[0] ?? null);
+        }
+
+        // Fetch certificate
+        try {
+          const certRes = await apiFetch(`${apiBaseUrl}/certificates/${encodeURIComponent(user.email)}`);
+          if (certRes.ok) {
+            const certData = (await certRes.json()) as { available: boolean; certificate: string | null };
+            setCertAvailable(certData.available);
+            setCertificate(certData.certificate ?? null);
+          }
+        } catch {
+          // certificate fetch failure is non-fatal
         }
       } finally {
         setIsLoading(false);
@@ -1811,6 +1827,19 @@ export default function StudentDownloads() {
     doc.save(`student-feedback-${profile.email}.pdf`);
   };
 
+  // Stable download function — defined as useCallback so it always reads
+  // the latest `certificate` state, never a stale closure from useMemo.
+  const certDownload = useCallback(async () => {
+    if (!certificate) return;
+    const link = document.createElement("a");
+    link.href = certificate;
+    link.download = `internship-certificate-${profile?.name ?? "student"}.pdf`;
+    // Must be in the DOM for Firefox / Safari programmatic click to work
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [certificate, profile?.name]);
+
   const downloadItems = useMemo<DownloadItem[]>(() => {
     if (!profile) {
       return [];
@@ -1847,8 +1876,20 @@ export default function StudentDownloads() {
         fileName: `student-feedback-${profile.email}.pdf`,
         onDownload: downloadStudentFeedbackPdf,
       },
+      {
+        title: "Internship Certificate",
+        description: certAvailable
+          ? "Your official internship completion certificate issued by MoviCloud"
+          : "Certificate has not been issued yet — check back later",
+        icon: Award,
+        fileType: "PDF",
+        size: certAvailable ? "Issued by admin" : "Not available",
+        color: "warning",
+        fileName: `internship-certificate-${profile.name ?? "student"}.pdf`,
+        onDownload: certDownload,
+      },
     ];
-  }, [companyFeedback, profile, studentFeedback]);
+  }, [companyFeedback, profile, studentFeedback, certAvailable, certDownload]);
 
   const isAnyDownloadInProgress = isDownloadingAll || activeDownloadFileName !== null;
 
@@ -1873,8 +1914,14 @@ export default function StudentDownloads() {
     setIsDownloadingAll(true);
     try {
       for (const item of downloadItems) {
+        // Skip certificate if not issued
+        if (item.color === "warning" && !certAvailable) {
+          continue;
+        }
         setActiveDownloadFileName(item.fileName);
         await item.onDownload();
+        // Small delay so the browser doesn't silently block rapid-fire downloads
+        await new Promise<void>((resolve) => setTimeout(resolve, 400));
       }
     } finally {
       setActiveDownloadFileName(null);
@@ -1898,6 +1945,10 @@ export default function StudentDownloads() {
     success: {
       bg: "bg-gradient-to-br from-emerald-500 to-teal-600",
       shadow: "shadow-emerald-500/50",
+    },
+    warning: {
+      bg: "bg-gradient-to-br from-amber-500 to-orange-500",
+      shadow: "shadow-amber-500/50",
     },
   };
 
@@ -1933,10 +1984,14 @@ export default function StudentDownloads() {
 
       {/* Content */}
       <div className="max-w-5xl mx-auto px-4 sm:px-8 py-6 sm:py-8">
+
         <div className="space-y-5">
           {downloadItems.map((item, index) => {
             const Icon = item.icon;
             const colors = colorClasses[item.color as keyof typeof colorClasses];
+            // Certificate-specific: disable download button if not available
+            const isCertItem = item.color === "warning";
+            const isCertDisabled = isCertItem && !certAvailable;
             return (
               <motion.div
                 key={item.title}
@@ -1964,13 +2019,26 @@ export default function StudentDownloads() {
                       <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                         {item.description}
                       </p>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <span className="px-3 py-1 bg-secondary rounded-lg text-xs font-semibold text-secondary-foreground">
                           {item.fileType}
                         </span>
                         <span className="text-sm text-muted-foreground font-medium">
                           {item.size}
                         </span>
+                        {isCertItem && (
+                          certAvailable ? (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                              Available
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+                              <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              Not Issued
+                            </span>
+                          )
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1980,14 +2048,18 @@ export default function StudentDownloads() {
                     onClick={() => {
                       void handleDownloadItem(item);
                     }}
-                    disabled={isAnyDownloadInProgress}
+                    disabled={isAnyDownloadInProgress || isCertDisabled}
                   >
                     {activeDownloadFileName === item.fileName ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Download className="w-4 h-4" />
                     )}
-                    {activeDownloadFileName === item.fileName ? "Generating..." : "Download"}
+                    {activeDownloadFileName === item.fileName
+                      ? "Generating..."
+                      : isCertDisabled
+                      ? "Not Available"
+                      : "Download"}
                   </Button>
                 </div>
               </motion.div>
