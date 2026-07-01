@@ -1,5 +1,8 @@
 import asyncio
+import logging
 from typing import Optional
+
+logger = logging.getLogger(__name__)
 
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 
@@ -34,8 +37,8 @@ async def ensure_indexes() -> None:
 async def initialize_database() -> bool:
     try:
         database = get_database()
-        # Try to ping with a 3 second timeout
-        await asyncio.wait_for(database.command("ping"), timeout=3.0)
+        # Try to ping with a 10 second timeout
+        await asyncio.wait_for(database.command("ping"), timeout=10.0)
         await ensure_indexes()
 
         students = database["students"]
@@ -104,6 +107,7 @@ async def initialize_database() -> bool:
             )
 
         return True
-    except Exception:
+    except Exception as exc:
+        logger.error("Failed to initialize database: %s", exc, exc_info=True)
         return False
 
