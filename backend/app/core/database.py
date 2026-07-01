@@ -38,25 +38,72 @@ async def initialize_database() -> bool:
         await asyncio.wait_for(database.command("ping"), timeout=3.0)
         await ensure_indexes()
 
+        students = database["students"]
         users = database["users"]
-        if await users.count_documents({}) == 0:
-            await users.insert_many(
-                [
-                    {
-                        "name": "Alex Johnson",
-                        "email": _settings.demo_student_email,
-                        "password_hash": hash_password(_settings.demo_student_password),
-                        "role": "student",
-                    },
-                    {
-                        "name": "Company Admin",
-                        "email": _settings.demo_company_email,
-                        "password_hash": hash_password(_settings.demo_company_password),
-                        "role": "company",
-                    },
-                ]
+
+        # Ensure demo student exists in students collection
+        demo_student = await students.find_one({"email": _settings.demo_student_email})
+        if not demo_student:
+            student_doc = {
+                "name": "Alex Johnson",
+                "email": _settings.demo_student_email,
+                "profilePhoto": "",
+                "role_title": "Software Engineer Intern",
+                "college": "State University",
+                "college_department": "Computer Science",
+                "status": "pending",
+                "tasks": [],
+                "skills": [],
+                "company_name": "",
+                "phone": "",
+                "supervisor": "",
+                "supervisorEmail": "",
+                "startDate": "",
+                "endDate": "",
+                "duration": "",
+                "hr": "",
+                "manager": "",
+                "offer_letter": "",
+                "nda": "",
+                "payment": "",
+                "pmo": "",
+            }
+            insert_result = await students.insert_one(student_doc)
+            student_id = str(insert_result.inserted_id)
+        else:
+            student_id = str(demo_student["_id"])
+
+        # Ensure demo student exists in users collection and is linked
+        demo_student_user = await users.find_one({"email": _settings.demo_student_email})
+        if not demo_student_user:
+            await users.insert_one(
+                {
+                    "name": "Alex Johnson",
+                    "email": _settings.demo_student_email,
+                    "password_hash": hash_password(_settings.demo_student_password),
+                    "role": "student",
+                    "student_id": student_id,
+                }
+            )
+        elif demo_student_user.get("student_id") != student_id:
+            await users.update_one(
+                {"email": _settings.demo_student_email},
+                {"$set": {"student_id": student_id}}
+            )
+
+        # Ensure demo company admin exists in users collection
+        demo_company_user = await users.find_one({"email": _settings.demo_company_email})
+        if not demo_company_user:
+            await users.insert_one(
+                {
+                    "name": "Company Admin",
+                    "email": _settings.demo_company_email,
+                    "password_hash": hash_password(_settings.demo_company_password),
+                    "role": "company",
+                }
             )
 
         return True
     except Exception:
         return False
+
