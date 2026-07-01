@@ -370,7 +370,6 @@ async def list_student_feedback(
     effective_student_email = student_email
     if current_user.role == "student":
         effective_student_email = student_email or current_user.email
-    if current_user.role == "student":
         await ensure_student_email_ownership(current_user, effective_student_email)
 
     if not await _ensure_mongodb_ready(request):

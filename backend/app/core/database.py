@@ -35,6 +35,11 @@ async def ensure_indexes() -> None:
 
 
 async def initialize_database() -> bool:
+    uri = _settings.mongodb_uri or ""
+    masked_uri = uri
+    if len(uri) > 15:
+        masked_uri = f"{uri[:12]}...{uri[-8:]}"
+    print(f"Initializing database connection with URI: {masked_uri!r} (len={len(uri)})", flush=True)
     try:
         database = get_database()
         # Try to ping with a 10 second timeout

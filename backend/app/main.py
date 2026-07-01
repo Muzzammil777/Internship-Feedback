@@ -1,9 +1,12 @@
+import logging
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from slowapi.errors import RateLimitExceeded
 from slowapi.extension import _rate_limit_exceeded_handler
 from slowapi.middleware import SlowAPIMiddleware
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import get_settings
 from app.core.database import initialize_database
@@ -18,7 +21,7 @@ settings = get_settings()
 
 app = FastAPI(title=settings.app_name)
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # pyright: ignore [reportArgumentType]
 app.add_middleware(SlowAPIMiddleware)
 
 app.add_middleware(
@@ -60,6 +63,7 @@ async def authenticate_sensitive_requests(request: Request, call_next):
 
 @app.on_event("startup")
 async def startup_event() -> None:
+    print(f"CORS Origins loaded: {settings.cors_origins!r} -> parsed: {settings.cors_origin_list!r}", flush=True)
     app.state.mongodb_ready = await initialize_database()
 
 
