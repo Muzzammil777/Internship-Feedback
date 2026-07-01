@@ -21,6 +21,8 @@ interface Task {
 const DEPARTMENTS = [
   "Computer Science and Engineering",
   "Information Technology",
+  "Artificial Intelligence and Machine Learning (AIML)",
+  "Artificial Intelligence and Data Science (AIDS)",
   "Electronics and Communication",
   "Electrical Engineering",
   "Mechanical Engineering",
