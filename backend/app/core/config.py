@@ -6,7 +6,8 @@ from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-ENV_FILE = Path(__file__).resolve().parents[2] / ".env"
+BACKEND_ENV = Path(__file__).resolve().parents[2] / ".env"
+ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
 
 
 class Settings(BaseSettings):
@@ -35,7 +36,7 @@ class Settings(BaseSettings):
     demo_company_password: str = "123456"
 
     model_config = SettingsConfigDict(
-        env_file=str(ENV_FILE),
+        env_file=[str(BACKEND_ENV), str(ROOT_ENV)],
         env_file_encoding="utf-8",
         extra="ignore",
     )
@@ -49,7 +50,7 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> List[str]:
-        return [origin.strip().strip("'\"") for origin in self.cors_origins.split(",") if origin.strip()]
+        return [origin.strip().strip("'\"").rstrip("/") for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 @lru_cache
