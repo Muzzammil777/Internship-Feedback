@@ -1,7 +1,8 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -39,9 +40,16 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    @field_validator("*", mode="before")
+    @classmethod
+    def clean_strings(cls, v: Any) -> Any:
+        if isinstance(v, str):
+            return v.strip().strip("'\"")
+        return v
+
     @property
     def cors_origin_list(self) -> List[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        return [origin.strip().strip("'\"") for origin in self.cors_origins.split(",") if origin.strip()]
 
 
 @lru_cache
