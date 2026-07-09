@@ -3,6 +3,14 @@ import os
 import asyncio
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Ensure environment variables are loaded from the backend directory .env
+_env_path = Path(__file__).resolve().parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(dotenv_path=_env_path)
+
 
 def _send_email_sync(to_email: str, subject: str, html_content: str) -> bool:
     email_user = os.getenv("EMAIL_USER")
