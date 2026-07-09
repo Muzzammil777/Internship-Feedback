@@ -34,6 +34,7 @@ export const sendEmailFromFrontend = (toEmail: string, subject: string, htmlCont
         From: emailUser,
         Subject: subject,
         Body: htmlContent,
+        Port: 587
       })
         .then((message: string) => {
           if (message === "OK") {
