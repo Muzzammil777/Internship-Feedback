@@ -223,6 +223,216 @@ async def create_student(
             "student_id": str(student_result.inserted_id),
         }
         await db["users"].insert_one(user_doc)
+
+        try:
+            from backend.utils.mailer import send_email
+        except ModuleNotFoundError:
+            from utils.mailer import send_email
+
+        from app.core.config import get_settings
+        settings = get_settings()
+        login_url = "http://localhost:5173"
+        if settings.cors_origin_list:
+            login_url = settings.cors_origin_list[0]
+
+        email_html = f"""<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to Internship Feedback Portal</title>
+  <style>
+    body {{
+      margin: 0;
+      padding: 0;
+      background-color: #f8fafc;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #0f172a;
+    }}
+    .wrapper {{
+      width: 100%;
+      table-layout: fixed;
+      background-color: #f8fafc;
+      padding-bottom: 40px;
+    }}
+    .main-table {{
+      background-color: #ffffff;
+      margin: 0 auto;
+      width: 100%;
+      max-width: 600px;
+      border-spacing: 0;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(3, 2, 19, 0.03), 0 1px 3px rgba(3, 2, 19, 0.02);
+      border: 1px solid #e2e8f0;
+      margin-top: 40px;
+    }}
+    .header {{
+      background: linear-gradient(135deg, #030213 0%, #1e1b4b 100%);
+      padding: 40px 20px;
+      text-align: center;
+    }}
+    .header h1 {{
+      color: #ffffff;
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0;
+      letter-spacing: -0.025em;
+    }}
+    .header p {{
+      color: #cbd5e1;
+      font-size: 14px;
+      margin: 8px 0 0 0;
+    }}
+    .content {{
+      padding: 40px 30px;
+      background-color: #ffffff;
+    }}
+    .greeting {{
+      font-size: 18px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-top: 0;
+      margin-bottom: 12px;
+    }}
+    .intro-text {{
+      font-size: 15px;
+      color: #475569;
+      line-height: 1.6;
+      margin-bottom: 30px;
+    }}
+    .credential-card {{
+      background-color: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 30px;
+    }}
+    .credential-row {{
+      margin-bottom: 16px;
+    }}
+    .credential-row:last-child {{
+      margin-bottom: 0;
+    }}
+    .credential-label {{
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }}
+    .credential-value {{
+      font-size: 16px;
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      color: #0f172a;
+      font-weight: 600;
+      background-color: #ffffff;
+      padding: 8px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      display: inline-block;
+    }}
+    .cta-container {{
+      text-align: center;
+      margin: 35px 0 25px 0;
+    }}
+    .cta-button {{
+      background-color: #030213;
+      color: #ffffff !important;
+      text-decoration: none;
+      padding: 14px 28px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 8px;
+      display: inline-block;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 6px -1px rgba(3, 2, 19, 0.1), 0 2px 4px -1px rgba(3, 2, 19, 0.06);
+    }}
+    .divider {{
+      border: 0;
+      border-top: 1px solid #e2e8f0;
+      margin: 30px 0;
+    }}
+    .info-footer {{
+      font-size: 13px;
+      color: #64748b;
+      line-height: 1.5;
+    }}
+    .footer {{
+      background-color: #f8fafc;
+      padding: 24px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      font-size: 12px;
+      color: #64748b;
+    }}
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <table class="main-table">
+      <tr>
+        <td class="header">
+          <h1>WELCOME TO INTERNSHIP FEEDBACK</h1>
+          <p>MoviCloud Internship Portal</p>
+        </td>
+      </tr>
+      <tr>
+        <td class="content">
+          <p class="greeting">Hello {payload.name},</p>
+          <p class="intro-text">
+            Your student account has been successfully created. You can now log in to the Internship Feedback Portal to update your profile, track tasks, and submit your feedback.
+          </p>
+          
+          <div class="credential-card">
+            <div class="credential-row">
+              <div class="credential-label">Portal URL</div>
+              <div class="credential-value" style="font-family: inherit; font-size: 14px;">{login_url}</div>
+            </div>
+            <div class="credential-row">
+              <div class="credential-label">Username / Email</div>
+              <div class="credential-value">{payload.email}</div>
+            </div>
+            <div class="credential-row">
+              <div class="credential-label">Temporary Password</div>
+              <div class="credential-value">{payload.password}</div>
+            </div>
+          </div>
+          
+          <div class="cta-container">
+            <a href="{login_url}" class="cta-button" target="_blank">Login to Your Portal</a>
+          </div>
+          
+          <hr class="divider">
+          
+          <div class="info-footer">
+            <p style="margin: 0 0 8px 0;"><strong>Important Security Notice:</strong> For your security, we recommend that you log in and change your password immediately upon your first sign-in.</p>
+            <p style="margin: 0;">If you did not expect this email or believe this account was created in error, please contact your internship administrator.</p>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <td class="footer">
+          &copy; 2026 MoviCloud. All rights reserved.<br>
+          Internship Feedback System
+        </td>
+      </tr>
+    </table>
+  </div>
+</body>
+</html>"""
+
+        import asyncio
+        asyncio.create_task(
+            send_email(
+                to_email=payload.email,
+                subject="WELCOME TO INTERNSHIP FEEDBACK",
+                html_content=email_html
+            )
+        )
     except DuplicateKeyError as exc:
         if student_result is not None:
             await db["students"].delete_one({"_id": student_result.inserted_id})
