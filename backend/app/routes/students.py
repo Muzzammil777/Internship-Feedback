@@ -231,7 +231,7 @@ async def create_student(
 
         from app.core.config import get_settings
         settings = get_settings()
-        login_url = "http://localhost:5173"
+        login_url = "https://internship-feedback.onrender.com/"
         if settings.cors_origin_list:
             login_url = settings.cors_origin_list[0]
 
@@ -240,7 +240,7 @@ async def create_student(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Welcome to Internship Feedback Portal</title>
+  <title>Welcome to MIT Connect</title>
   <style>
     body {{
       margin: 0;
@@ -265,14 +265,25 @@ async def create_student(
       border-collapse: collapse;
       border-radius: 12px;
       overflow: hidden;
-      box-shadow: 0 4px 12px rgba(3, 2, 19, 0.03), 0 1px 3px rgba(3, 2, 19, 0.02);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.05), 0 1px 3px rgba(124, 58, 237, 0.03);
       border: 1px solid #e2e8f0;
       margin-top: 40px;
     }}
     .header {{
-      background: linear-gradient(135deg, #030213 0%, #1e1b4b 100%);
+      background: linear-gradient(135deg, #7c3aed 0%, #4c1d95 100%);
       padding: 40px 20px;
       text-align: center;
+    }}
+    .logo-badge {{
+      background-color: #ffffff;
+      width: 50px;
+      height: 50px;
+      line-height: 50px;
+      border-radius: 50%;
+      font-size: 24px;
+      display: inline-block;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
     }}
     .header h1 {{
       color: #ffffff;
@@ -282,9 +293,10 @@ async def create_student(
       letter-spacing: -0.025em;
     }}
     .header p {{
-      color: #cbd5e1;
+      color: #ddd6fe;
       font-size: 14px;
       margin: 8px 0 0 0;
+      font-weight: 500;
     }}
     .content {{
       padding: 40px 30px;
@@ -304,8 +316,8 @@ async def create_student(
       margin-bottom: 30px;
     }}
     .credential-card {{
-      background-color: #f8fafc;
-      border: 1px solid #e2e8f0;
+      background-color: #f5f3ff;
+      border: 1px solid #ddd6fe;
       border-radius: 8px;
       padding: 24px;
       margin-bottom: 30px;
@@ -320,18 +332,18 @@ async def create_student(
       font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.05em;
-      color: #64748b;
+      color: #6d28d9;
       font-weight: 600;
       margin-bottom: 4px;
     }}
     .credential-value {{
       font-size: 16px;
       font-family: 'JetBrains Mono', 'Courier New', monospace;
-      color: #0f172a;
+      color: #4c1d95;
       font-weight: 600;
       background-color: #ffffff;
       padding: 8px 12px;
-      border: 1px solid #cbd5e1;
+      border: 1px solid #ddd6fe;
       border-radius: 6px;
       display: inline-block;
     }}
@@ -340,7 +352,7 @@ async def create_student(
       margin: 35px 0 25px 0;
     }}
     .cta-button {{
-      background-color: #030213;
+      background-color: #7c3aed;
       color: #ffffff !important;
       text-decoration: none;
       padding: 14px 28px;
@@ -349,11 +361,11 @@ async def create_student(
       border-radius: 8px;
       display: inline-block;
       transition: all 0.2s ease;
-      box-shadow: 0 4px 6px -1px rgba(3, 2, 19, 0.1), 0 2px 4px -1px rgba(3, 2, 19, 0.06);
+      box-shadow: 0 4px 6px -1px rgba(124, 58, 237, 0.2), 0 2px 4px -1px rgba(124, 58, 237, 0.1);
     }}
     .divider {{
       border: 0;
-      border-top: 1px solid #e2e8f0;
+      border-top: 1px solid #ddd6fe;
       margin: 30px 0;
     }}
     .info-footer {{
@@ -376,15 +388,16 @@ async def create_student(
     <table class="main-table">
       <tr>
         <td class="header">
-          <h1>WELCOME TO INTERNSHIP FEEDBACK</h1>
-          <p>MoviCloud Internship Portal</p>
+          <div class="logo-badge">🎓</div>
+          <h1>WELCOME TO MIT CONNECT</h1>
+          <p>Unified Campus Management System</p>
         </td>
       </tr>
       <tr>
         <td class="content">
           <p class="greeting">Hello {payload.name},</p>
           <p class="intro-text">
-            Your student account has been successfully created. You can now log in to the Internship Feedback Portal to update your profile, track tasks, and submit your feedback.
+            Your student account has been successfully created. You can now log in to the MIT Connect Portal to manage academics, view records, track tasks, and submit your feedback.
           </p>
           
           <div class="credential-card">
@@ -403,7 +416,7 @@ async def create_student(
           </div>
           
           <div class="cta-container">
-            <a href="{login_url}" class="cta-button" target="_blank">Login to Your Portal</a>
+            <a href="{login_url}" class="cta-button" target="_blank">Sign In to Your Workspace</a>
           </div>
           
           <hr class="divider">
@@ -416,7 +429,7 @@ async def create_student(
       </tr>
       <tr>
         <td class="footer">
-          &copy; 2026 MoviCloud. All rights reserved.<br>
+          &copy; 2026 MIT Connect. All rights reserved.<br>
           Internship Feedback System
         </td>
       </tr>
@@ -429,7 +442,7 @@ async def create_student(
         asyncio.create_task(
             send_email(
                 to_email=payload.email,
-                subject="WELCOME TO INTERNSHIP FEEDBACK",
+                subject="WELCOME TO MIT CONNECT",
                 html_content=email_html
             )
         )
