@@ -30,6 +30,7 @@ import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
 import { Textarea } from "../../components/ui/textarea";
 import { apiFetch } from "../../lib/api";
+import { sendWelcomeEmail } from "../../lib/mailer";
 
 interface Task {
   id: string;
@@ -214,6 +215,16 @@ export default function CompanyStudentDetails() {
       // Add to local list immediately without needing a full refetch
       setStudents((prev) => [...prev, created]);
       setShowSuccess(true);
+
+      // Send welcome email directly from the frontend
+      sendWelcomeEmail(
+        newStudentForm.name,
+        newStudentForm.email,
+        newStudentForm.password,
+        window.location.origin
+      ).catch((err) => {
+        console.error("Failed to send welcome email from frontend:", err);
+      });
 
       setTimeout(() => {
         setIsAddModalOpen(false);
